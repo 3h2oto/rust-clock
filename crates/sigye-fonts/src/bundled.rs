@@ -1,124 +1,124 @@
 //! Bundled FIGlet fonts embedded in the binary.
 
 /// 3D-ASCII font - 3D ASCII art style.
-pub const THREE_D_ASCII_FLF: &str = include_str!("../../../fonts/3D-ASCII.flf");
+pub const THREE_D_ASCII_FLF: &str = include_str!("../fonts/3D-ASCII.flf");
 
 /// Alphabet font - simple alphabet letters.
-pub const ALPHABET_FLF: &str = include_str!("../../../fonts/Alphabet.flf");
+pub const ALPHABET_FLF: &str = include_str!("../fonts/Alphabet.flf");
 
 /// ANSI Shadow font - shadow effect style.
-pub const ANSI_SHADOW_FLF: &str = include_str!("../../../fonts/ANSI_Shadow.flf");
+pub const ANSI_SHADOW_FLF: &str = include_str!("../fonts/ANSI_Shadow.flf");
 
 /// Avatar font - Avatar movie inspired.
-pub const AVATAR_FLF: &str = include_str!("../../../fonts/Avatar.flf");
+pub const AVATAR_FLF: &str = include_str!("../fonts/Avatar.flf");
 
 /// Banner font - wide banner style.
-pub const BANNER_FLF: &str = include_str!("../../../fonts/Banner.flf");
+pub const BANNER_FLF: &str = include_str!("../fonts/Banner.flf");
 
 /// Big font - large block letters.
-pub const BIG_FLF: &str = include_str!("../../../fonts/Big.flf");
+pub const BIG_FLF: &str = include_str!("../fonts/Big.flf");
 
 /// Block font - solid blocks.
-pub const BLOCK_FLF: &str = include_str!("../../../fonts/Block.flf");
+pub const BLOCK_FLF: &str = include_str!("../fonts/Block.flf");
 
 /// Chunky font - thick chunky letters.
-pub const CHUNKY_FLF: &str = include_str!("../../../fonts/Chunky.flf");
+pub const CHUNKY_FLF: &str = include_str!("../fonts/Chunky.flf");
 
 /// Colossal font - massive letters.
-pub const COLOSSAL_FLF: &str = include_str!("../../../fonts/Colossal.flf");
+pub const COLOSSAL_FLF: &str = include_str!("../fonts/Colossal.flf");
 
 /// Alligator font - alligator teeth style.
-pub const ALLIGATOR_FLF: &str = include_str!("../../../fonts/Alligator.flf");
+pub const ALLIGATOR_FLF: &str = include_str!("../fonts/Alligator.flf");
 
 /// Doom font - Doom game inspired.
-pub const DOOM_FLF: &str = include_str!("../../../fonts/Doom.flf");
+pub const DOOM_FLF: &str = include_str!("../fonts/Doom.flf");
 
 /// Electronic font - electronic display style.
-pub const ELECTRONIC_FLF: &str = include_str!("../../../fonts/Electronic.flf");
+pub const ELECTRONIC_FLF: &str = include_str!("../fonts/Electronic.flf");
 
 /// Epic font - epic dramatic style.
-pub const EPIC_FLF: &str = include_str!("../../../fonts/Epic.flf");
+pub const EPIC_FLF: &str = include_str!("../fonts/Epic.flf");
 
 /// Graffiti font - street art style.
-pub const GRAFFITI_FLF: &str = include_str!("../../../fonts/Graffiti.flf");
+pub const GRAFFITI_FLF: &str = include_str!("../fonts/Graffiti.flf");
 
 /// Ivrit font - Hebrew-inspired style.
-pub const IVRIT_FLF: &str = include_str!("../../../fonts/Ivrit.flf");
+pub const IVRIT_FLF: &str = include_str!("../fonts/Ivrit.flf");
 
 /// Larry 3D font - 3D perspective style.
-pub const LARRY_3D_FLF: &str = include_str!("../../../fonts/Larry_3D.flf");
+pub const LARRY_3D_FLF: &str = include_str!("../fonts/Larry_3D.flf");
 
 /// Lean font - thin slanted style.
-pub const LEAN_FLF: &str = include_str!("../../../fonts/Lean.flf");
+pub const LEAN_FLF: &str = include_str!("../fonts/Lean.flf");
 
 /// Mini font - tiny compact letters.
-pub const MINI_FLF: &str = include_str!("../../../fonts/Mini.flf");
+pub const MINI_FLF: &str = include_str!("../fonts/Mini.flf");
 
 /// Ogre font - bold ogre style.
-pub const OGRE_FLF: &str = include_str!("../../../fonts/Ogre.flf");
+pub const OGRE_FLF: &str = include_str!("../fonts/Ogre.flf");
 
 /// Poison font - toxic/poison style.
-pub const POISON_FLF: &str = include_str!("../../../fonts/Poison.flf");
+pub const POISON_FLF: &str = include_str!("../fonts/Poison.flf");
 
 /// Script font - cursive handwriting style.
-pub const SCRIPT_FLF: &str = include_str!("../../../fonts/Script.flf");
+pub const SCRIPT_FLF: &str = include_str!("../fonts/Script.flf");
 
 /// Shadow font - letters with shadow.
-pub const SHADOW_FLF: &str = include_str!("../../../fonts/Shadow.flf");
+pub const SHADOW_FLF: &str = include_str!("../fonts/Shadow.flf");
 
 /// Slant font - italic-style slant.
-pub const SLANT_FLF: &str = include_str!("../../../fonts/Slant.flf");
+pub const SLANT_FLF: &str = include_str!("../fonts/Slant.flf");
 
 /// Small font - compact version.
-pub const SMALL_FLF: &str = include_str!("../../../fonts/Small.flf");
+pub const SMALL_FLF: &str = include_str!("../fonts/Small.flf");
 
 /// Speed font - fast/motion style.
-pub const SPEED_FLF: &str = include_str!("../../../fonts/Speed.flf");
+pub const SPEED_FLF: &str = include_str!("../fonts/Speed.flf");
 
 /// Standard FIGlet font - the classic default.
-pub const STANDARD_FLF: &str = include_str!("../../../fonts/Standard.flf");
+pub const STANDARD_FLF: &str = include_str!("../fonts/Standard.flf");
 
 /// Star Wars font - Star Wars movie style.
-pub const STAR_WARS_FLF: &str = include_str!("../../../fonts/Star_Wars.flf");
+pub const STAR_WARS_FLF: &str = include_str!("../fonts/Star_Wars.flf");
 
 /// Acrobatic font - acrobatic style letters.
-pub const ACROBATIC_FLF: &str = include_str!("../../../fonts/Acrobatic.flf");
+pub const ACROBATIC_FLF: &str = include_str!("../fonts/Acrobatic.flf");
 
 /// ANSI Regular font - clean ANSI style.
-pub const ANSI_REGULAR_FLF: &str = include_str!("../../../fonts/ANSI_Regular.flf");
+pub const ANSI_REGULAR_FLF: &str = include_str!("../fonts/ANSI_Regular.flf");
 
 /// Big Money-ne font - money/currency style.
-pub const BIG_MONEY_NE_FLF: &str = include_str!("../../../fonts/Big_Money_ne.flf");
+pub const BIG_MONEY_NE_FLF: &str = include_str!("../fonts/Big_Money_ne.flf");
 
 /// BlurVision ASCII font - blurred vision effect.
-pub const BLURVISION_ASCII_FLF: &str = include_str!("../../../fonts/BlurVision_ASCII.flf");
+pub const BLURVISION_ASCII_FLF: &str = include_str!("../fonts/BlurVision_ASCII.flf");
 
 /// Doh font - Homer Simpson style.
-pub const DOH_FLF: &str = include_str!("../../../fonts/Doh.flf");
+pub const DOH_FLF: &str = include_str!("../fonts/Doh.flf");
 
 /// Bell font - bell-shaped letters.
-pub const BELL_FLF: &str = include_str!("../../../fonts/Bell.flf");
+pub const BELL_FLF: &str = include_str!("../fonts/Bell.flf");
 
 /// Puffy font - puffy cloud style.
-pub const PUFFY_FLF: &str = include_str!("../../../fonts/Puffy.flf");
+pub const PUFFY_FLF: &str = include_str!("../fonts/Puffy.flf");
 
 /// Rectangles font - rectangular blocks.
-pub const RECTANGLES_FLF: &str = include_str!("../../../fonts/Rectangles.flf");
+pub const RECTANGLES_FLF: &str = include_str!("../fonts/Rectangles.flf");
 
 /// Mono 9 font - monospace 9-line (TLF format)
-pub const MONO_9_FLF: &str = include_str!("../../../fonts/Mono_9.flf");
+pub const MONO_9_FLF: &str = include_str!("../fonts/Mono_9.flf");
 
 /// Mono 12 font - monospace 12-line (TLF format).
-pub const MONO_12_FLF: &str = include_str!("../../../fonts/Mono_12.flf");
+pub const MONO_12_FLF: &str = include_str!("../fonts/Mono_12.flf");
 
 /// Rebel font - rebellious style (TLF format).
-pub const REBEL_FLF: &str = include_str!("../../../fonts/Rebel.flf");
+pub const REBEL_FLF: &str = include_str!("../fonts/Rebel.flf");
 
 /// Terrace font - terraced/stepped style.
-pub const TERRACE_FLF: &str = include_str!("../../../fonts/Terrace.flf");
+pub const TERRACE_FLF: &str = include_str!("../fonts/Terrace.flf");
 
 /// Tmplr font - templated style.
-pub const TMPLR_FLF: &str = include_str!("../../../fonts/Tmplr.flf");
+pub const TMPLR_FLF: &str = include_str!("../fonts/Tmplr.flf");
 
 /// List of all bundled fonts with their names and content.
 pub const BUNDLED_FONTS: &[(&str, &str)] = &[
