@@ -1,0 +1,10 @@
+[package]
+name = "sigye-fonts"
+description = "ASCII art fonts for sigye clock app"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+sigye-core.workspace = true

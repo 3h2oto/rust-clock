@@ -1,0 +1,10 @@
+[package]
+name = "sigye-core"
+description = "Core types for sigye clock app"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+ratatui.workspace = true

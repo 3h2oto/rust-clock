@@ -1,0 +1,15 @@
+[package]
+name = "sigye"
+description = "A clock app for terminal"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+sigye-core.workspace = true
+sigye-fonts.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+chrono.workspace = true
+color-eyre.workspace = true
