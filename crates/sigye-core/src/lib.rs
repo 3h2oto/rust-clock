@@ -21,6 +21,150 @@ impl TimeFormat {
     }
 }
 
+/// Animation style for color themes.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AnimationStyle {
+    #[default]
+    None,
+    Shifting,
+    Pulsing,
+    Wave,
+    Reactive,
+}
+
+/// All animation styles for cycling.
+const ALL_ANIMATION_STYLES: &[AnimationStyle] = &[
+    AnimationStyle::None,
+    AnimationStyle::Shifting,
+    AnimationStyle::Pulsing,
+    AnimationStyle::Wave,
+    AnimationStyle::Reactive,
+];
+
+impl AnimationStyle {
+    /// Cycle to the next animation style.
+    pub fn next(&self) -> Self {
+        let current_idx = ALL_ANIMATION_STYLES
+            .iter()
+            .position(|s| s == self)
+            .unwrap_or(0);
+        let next_idx = (current_idx + 1) % ALL_ANIMATION_STYLES.len();
+        ALL_ANIMATION_STYLES[next_idx]
+    }
+
+    /// Cycle to the previous animation style.
+    pub fn prev(&self) -> Self {
+        let current_idx = ALL_ANIMATION_STYLES
+            .iter()
+            .position(|s| s == self)
+            .unwrap_or(0);
+        let prev_idx = if current_idx == 0 {
+            ALL_ANIMATION_STYLES.len() - 1
+        } else {
+            current_idx - 1
+        };
+        ALL_ANIMATION_STYLES[prev_idx]
+    }
+
+    /// Get display name for the animation style.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            AnimationStyle::None => "None",
+            AnimationStyle::Shifting => "Shifting",
+            AnimationStyle::Pulsing => "Pulsing",
+            AnimationStyle::Wave => "Wave",
+            AnimationStyle::Reactive => "Reactive",
+        }
+    }
+}
+
+/// Animation speed setting.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AnimationSpeed {
+    Slow,
+    #[default]
+    Medium,
+    Fast,
+}
+
+/// All animation speeds for cycling.
+const ALL_ANIMATION_SPEEDS: &[AnimationSpeed] = &[
+    AnimationSpeed::Slow,
+    AnimationSpeed::Medium,
+    AnimationSpeed::Fast,
+];
+
+impl AnimationSpeed {
+    /// Cycle to the next speed.
+    pub fn next(&self) -> Self {
+        let current_idx = ALL_ANIMATION_SPEEDS
+            .iter()
+            .position(|s| s == self)
+            .unwrap_or(0);
+        let next_idx = (current_idx + 1) % ALL_ANIMATION_SPEEDS.len();
+        ALL_ANIMATION_SPEEDS[next_idx]
+    }
+
+    /// Cycle to the previous speed.
+    pub fn prev(&self) -> Self {
+        let current_idx = ALL_ANIMATION_SPEEDS
+            .iter()
+            .position(|s| s == self)
+            .unwrap_or(0);
+        let prev_idx = if current_idx == 0 {
+            ALL_ANIMATION_SPEEDS.len() - 1
+        } else {
+            current_idx - 1
+        };
+        ALL_ANIMATION_SPEEDS[prev_idx]
+    }
+
+    /// Get display name for the speed.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            AnimationSpeed::Slow => "Slow",
+            AnimationSpeed::Medium => "Medium",
+            AnimationSpeed::Fast => "Fast",
+        }
+    }
+
+    /// Get the cycle duration in milliseconds for shifting animation.
+    pub fn shift_cycle_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 30_000,
+            AnimationSpeed::Medium => 15_000,
+            AnimationSpeed::Fast => 5_000,
+        }
+    }
+
+    /// Get the pulse period in milliseconds.
+    pub fn pulse_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 3_000,
+            AnimationSpeed::Medium => 1_500,
+            AnimationSpeed::Fast => 750,
+        }
+    }
+
+    /// Get the wave period in milliseconds.
+    pub fn wave_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 4_000,
+            AnimationSpeed::Medium => 2_000,
+            AnimationSpeed::Fast => 1_000,
+        }
+    }
+
+    /// Get the flash decay duration in milliseconds for reactive animation.
+    pub fn flash_decay_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 800,
+            AnimationSpeed::Medium => 400,
+            AnimationSpeed::Fast => 200,
+        }
+    }
+}
+
 /// Color theme for the clock display.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ColorTheme {
@@ -260,4 +404,190 @@ impl ColorTheme {
             ColorTheme::GradientFire => "Fire",
         }
     }
+}
+
+/// Apply animation transformations to a color.
+pub fn apply_animation(
+    base_color: Color,
+    animation_style: AnimationStyle,
+    speed: AnimationSpeed,
+    elapsed_ms: u64,
+    x: usize,
+    width: usize,
+    flash_intensity: f32,
+) -> Color {
+    match animation_style {
+        AnimationStyle::None => base_color,
+        AnimationStyle::Shifting => apply_shifting(base_color, elapsed_ms, speed),
+        AnimationStyle::Pulsing => apply_pulsing(base_color, elapsed_ms, speed),
+        AnimationStyle::Wave => apply_wave(base_color, elapsed_ms, speed, x, width),
+        AnimationStyle::Reactive => apply_reactive(base_color, flash_intensity),
+    }
+}
+
+/// Shift hue over time.
+fn apply_shifting(color: Color, elapsed_ms: u64, speed: AnimationSpeed) -> Color {
+    let (r, g, b) = color_to_rgb(color);
+    let (h, s, l) = rgb_to_hsl(r, g, b);
+
+    let cycle_ms = speed.shift_cycle_ms();
+    let hue_offset = ((elapsed_ms % cycle_ms) as f32 / cycle_ms as f32) * 360.0;
+    let new_h = (h + hue_offset) % 360.0;
+
+    let (nr, ng, nb) = hsl_to_rgb(new_h, s, l);
+    Color::Rgb(nr, ng, nb)
+}
+
+/// Pulse brightness using sine wave.
+fn apply_pulsing(color: Color, elapsed_ms: u64, speed: AnimationSpeed) -> Color {
+    let (r, g, b) = color_to_rgb(color);
+
+    let period_ms = speed.pulse_period_ms();
+    let phase = (elapsed_ms % period_ms) as f32 / period_ms as f32;
+    let brightness = 0.5 + 0.5 * (phase * 2.0 * std::f32::consts::PI).sin();
+
+    // Apply brightness (minimum 30% to stay visible)
+    let factor = 0.3 + 0.7 * brightness;
+    Color::Rgb(
+        (r as f32 * factor) as u8,
+        (g as f32 * factor) as u8,
+        (b as f32 * factor) as u8,
+    )
+}
+
+/// Wave pattern flowing horizontally.
+fn apply_wave(
+    color: Color,
+    elapsed_ms: u64,
+    speed: AnimationSpeed,
+    x: usize,
+    width: usize,
+) -> Color {
+    let (r, g, b) = color_to_rgb(color);
+
+    let period_ms = speed.wave_period_ms();
+    let time_phase = (elapsed_ms % period_ms) as f32 / period_ms as f32;
+    let x_phase = if width > 0 {
+        x as f32 / width as f32
+    } else {
+        0.0
+    };
+
+    let wave = ((x_phase + time_phase) * 2.0 * std::f32::consts::PI).sin();
+    let brightness = 0.6 + 0.4 * wave;
+
+    Color::Rgb(
+        (r as f32 * brightness) as u8,
+        (g as f32 * brightness) as u8,
+        (b as f32 * brightness) as u8,
+    )
+}
+
+/// Apply flash intensity for reactive animation.
+fn apply_reactive(color: Color, flash_intensity: f32) -> Color {
+    let (r, g, b) = color_to_rgb(color);
+
+    // Boost brightness based on flash intensity
+    let factor = 1.0 + flash_intensity;
+    Color::Rgb(
+        (r as f32 * factor).min(255.0) as u8,
+        (g as f32 * factor).min(255.0) as u8,
+        (b as f32 * factor).min(255.0) as u8,
+    )
+}
+
+/// Extract RGB values from a Color.
+fn color_to_rgb(color: Color) -> (u8, u8, u8) {
+    match color {
+        Color::Rgb(r, g, b) => (r, g, b),
+        Color::Red => (255, 0, 0),
+        Color::Green => (0, 255, 0),
+        Color::Blue => (0, 0, 255),
+        Color::Yellow => (255, 255, 0),
+        Color::Magenta => (255, 0, 255),
+        Color::Cyan => (0, 255, 255),
+        Color::White => (255, 255, 255),
+        _ => (128, 128, 128),
+    }
+}
+
+/// Convert RGB to HSL.
+fn rgb_to_hsl(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
+    let r = r as f32 / 255.0;
+    let g = g as f32 / 255.0;
+    let b = b as f32 / 255.0;
+
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let l = (max + min) / 2.0;
+
+    if max == min {
+        return (0.0, 0.0, l);
+    }
+
+    let d = max - min;
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
+
+    let h = if max == r {
+        ((g - b) / d + if g < b { 6.0 } else { 0.0 }) * 60.0
+    } else if max == g {
+        ((b - r) / d + 2.0) * 60.0
+    } else {
+        ((r - g) / d + 4.0) * 60.0
+    };
+
+    (h, s, l)
+}
+
+/// Convert HSL to RGB.
+fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
+    if s == 0.0 {
+        let v = (l * 255.0) as u8;
+        return (v, v, v);
+    }
+
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
+    let p = 2.0 * l - q;
+
+    let h = h / 360.0;
+
+    let r = hue_to_rgb(p, q, h + 1.0 / 3.0);
+    let g = hue_to_rgb(p, q, h);
+    let b = hue_to_rgb(p, q, h - 1.0 / 3.0);
+
+    ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+}
+
+fn hue_to_rgb(p: f32, q: f32, mut t: f32) -> f32 {
+    if t < 0.0 {
+        t += 1.0;
+    }
+    if t > 1.0 {
+        t -= 1.0;
+    }
+
+    if t < 1.0 / 6.0 {
+        p + (q - p) * 6.0 * t
+    } else if t < 1.0 / 2.0 {
+        q
+    } else if t < 2.0 / 3.0 {
+        p + (q - p) * (2.0 / 3.0 - t) * 6.0
+    } else {
+        p
+    }
+}
+
+/// Check if colon should be visible in the blink cycle.
+/// Returns true during the "on" phase (first 500ms of each second).
+pub fn is_colon_visible(elapsed_ms: u64) -> bool {
+    let phase = (elapsed_ms % 1000) as f32 / 1000.0;
+    phase < 0.5
 }

@@ -2,7 +2,7 @@
 
 mod settings;
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use chrono::Local;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -14,7 +14,9 @@ use ratatui::{
     widgets::Paragraph,
 };
 use sigye_config::Config;
-use sigye_core::{ColorTheme, TimeFormat};
+use sigye_core::{
+    AnimationSpeed, AnimationStyle, ColorTheme, TimeFormat, apply_animation, is_colon_visible,
+};
 use sigye_fonts::FontRegistry;
 
 use settings::SettingsDialog;
@@ -35,6 +37,12 @@ pub struct App {
     time_format: TimeFormat,
     /// Current color theme.
     color_theme: ColorTheme,
+    /// Current animation style.
+    animation_style: AnimationStyle,
+    /// Current animation speed.
+    animation_speed: AnimationSpeed,
+    /// Whether colon blinks.
+    colon_blink: bool,
     /// Current font name.
     current_font: String,
     /// Font registry containing all available fonts.
@@ -43,6 +51,18 @@ pub struct App {
     settings_dialog: SettingsDialog,
     /// Configuration for persistence.
     config: Config,
+    /// Animation start time.
+    animation_start: Instant,
+    /// Last recorded second (for reactive animation).
+    last_second: u32,
+    /// Last recorded minute (for reactive animation).
+    last_minute: u32,
+    /// Last recorded hour (for reactive animation).
+    last_hour: u32,
+    /// Current flash intensity (0.0 to 1.0).
+    flash_intensity: f32,
+    /// When the last flash started (for decay calculation).
+    flash_start: Option<Instant>,
 }
 
 impl App {
@@ -67,14 +87,26 @@ impl App {
         // Create settings dialog
         let settings_dialog = SettingsDialog::new(available_fonts);
 
+        // Get current time for initial state
+        let now = chrono::Local::now();
+
         Self {
             running: false,
             time_format: config.time_format,
             color_theme: config.color_theme,
+            animation_style: config.animation_style,
+            animation_speed: config.animation_speed,
+            colon_blink: config.colon_blink,
             current_font: config.font_name.clone(),
             font_registry,
             settings_dialog,
             config,
+            animation_start: Instant::now(),
+            last_second: now.format("%S").to_string().parse().unwrap_or(0),
+            last_minute: now.format("%M").to_string().parse().unwrap_or(0),
+            last_hour: now.format("%H").to_string().parse().unwrap_or(0),
+            flash_intensity: 0.0,
+            flash_start: None,
         }
     }
 
@@ -91,6 +123,12 @@ impl App {
     /// Renders the user interface.
     fn render(&mut self, frame: &mut Frame) {
         let now = Local::now();
+
+        // Calculate animation elapsed time
+        let elapsed_ms = self.animation_start.elapsed().as_millis() as u64;
+
+        // Update flash intensity for reactive animation
+        self.update_flash(&now);
 
         // Get time components
         let (hours, is_pm) = match self.time_format {
@@ -143,8 +181,32 @@ impl App {
         let height = time_lines.len();
         let width = time_lines.first().map(|s| s.len()).unwrap_or(0);
 
-        let time_text: Vec<Line> = if self.color_theme.is_dynamic() {
-            // Apply per-character coloring for dynamic themes
+        // Build colon position mask for blink effect
+        // Maps x-positions in rendered ASCII art back to colon characters in time_str
+        let colon_positions: Vec<bool> = if self.colon_blink {
+            let mut mask = vec![false; width];
+            let mut x_pos = 0;
+            for ch in time_str.chars() {
+                let char_width = font.char_width(ch);
+                if ch == ':' {
+                    for i in 0..char_width {
+                        if x_pos + i < mask.len() {
+                            mask[x_pos + i] = true;
+                        }
+                    }
+                }
+                x_pos += char_width;
+            }
+            mask
+        } else {
+            vec![]
+        };
+
+        let time_text: Vec<Line> = if self.color_theme.is_dynamic()
+            || self.animation_style != AnimationStyle::None
+            || self.colon_blink
+        {
+            // Apply per-character coloring for dynamic themes or animations
             time_lines
                 .into_iter()
                 .enumerate()
@@ -153,16 +215,43 @@ impl App {
                         .chars()
                         .enumerate()
                         .map(|(x, ch)| {
-                            let char_color =
-                                self.color_theme.color_at_position(x, y, width, height);
-                            Span::styled(ch.to_string(), Style::new().fg(char_color))
+                            // Get base color
+                            let base_color = if self.color_theme.is_dynamic() {
+                                self.color_theme.color_at_position(x, y, width, height)
+                            } else {
+                                color
+                            };
+
+                            // Apply animation
+                            let animated_color = apply_animation(
+                                base_color,
+                                self.animation_style,
+                                self.animation_speed,
+                                elapsed_ms,
+                                x,
+                                width,
+                                self.flash_intensity,
+                            );
+
+                            // Apply colon blink by hiding colon characters during "off" phase
+                            let is_colon = colon_positions.get(x).copied().unwrap_or(false);
+                            let should_hide = self.colon_blink
+                                && is_colon
+                                && !is_colon_visible(elapsed_ms);
+
+                            if should_hide {
+                                // Replace with space to hide colon (works on any terminal theme)
+                                Span::raw(" ")
+                            } else {
+                                Span::styled(ch.to_string(), Style::new().fg(animated_color))
+                            }
                         })
                         .collect();
                     Line::from(spans)
                 })
                 .collect()
         } else {
-            // Static color for the whole text
+            // Static color for the whole text (no animation, no colon blink)
             time_lines
                 .into_iter()
                 .map(|s| Line::from(s).style(Style::new().fg(color)))
@@ -172,22 +261,36 @@ impl App {
         let time_widget = Paragraph::new(time_text).alignment(Alignment::Center);
         frame.render_widget(time_widget, chunks[1]);
 
-        // Render date (also with dynamic colors if applicable)
-        let date_widget = if self.color_theme.is_dynamic() {
-            let date_spans: Vec<Span> = date_str
-                .chars()
-                .enumerate()
-                .map(|(x, ch)| {
-                    let char_color = self.color_theme.color_at_position(x, 0, date_str.len(), 1);
-                    Span::styled(ch.to_string(), Style::new().fg(char_color))
-                })
-                .collect();
-            Paragraph::new(Line::from(date_spans)).alignment(Alignment::Center)
-        } else {
-            Paragraph::new(date_str)
-                .style(Style::new().fg(color))
-                .alignment(Alignment::Center)
-        };
+        // Render date (also with dynamic colors/animations if applicable)
+        let date_widget =
+            if self.color_theme.is_dynamic() || self.animation_style != AnimationStyle::None {
+                let date_spans: Vec<Span> = date_str
+                    .chars()
+                    .enumerate()
+                    .map(|(x, ch)| {
+                        let base_color = if self.color_theme.is_dynamic() {
+                            self.color_theme.color_at_position(x, 0, date_str.len(), 1)
+                        } else {
+                            color
+                        };
+                        let animated_color = apply_animation(
+                            base_color,
+                            self.animation_style,
+                            self.animation_speed,
+                            elapsed_ms,
+                            x,
+                            date_str.len(),
+                            self.flash_intensity,
+                        );
+                        Span::styled(ch.to_string(), Style::new().fg(animated_color))
+                    })
+                    .collect();
+                Paragraph::new(Line::from(date_spans)).alignment(Alignment::Center)
+            } else {
+                Paragraph::new(date_str)
+                    .style(Style::new().fg(color))
+                    .alignment(Alignment::Center)
+            };
         frame.render_widget(date_widget, chunks[3]);
 
         // Render help text
@@ -195,9 +298,11 @@ impl App {
             "q".bold().fg(color),
             " quit  ".dark_gray(),
             "t".bold().fg(color),
-            " toggle 12/24h  ".dark_gray(),
+            " 12/24h  ".dark_gray(),
             "c".bold().fg(color),
-            " cycle color  ".dark_gray(),
+            " color  ".dark_gray(),
+            "a".bold().fg(color),
+            " anim  ".dark_gray(),
             "s".bold().fg(color),
             " settings".dark_gray(),
         ])
@@ -206,6 +311,44 @@ impl App {
 
         // Render settings dialog if visible
         self.settings_dialog.render(frame, area, color);
+    }
+
+    /// Update flash intensity for reactive animation.
+    fn update_flash(&mut self, now: &chrono::DateTime<chrono::Local>) {
+        let second: u32 = now.format("%S").to_string().parse().unwrap_or(0);
+        let minute: u32 = now.format("%M").to_string().parse().unwrap_or(0);
+        let hour: u32 = now.format("%H").to_string().parse().unwrap_or(0);
+
+        // Check for time changes and trigger flash
+        if hour != self.last_hour {
+            self.flash_intensity = 1.0; // Full flash for hour change
+            self.flash_start = Some(Instant::now());
+            self.last_hour = hour;
+            self.last_minute = minute;
+            self.last_second = second;
+        } else if minute != self.last_minute {
+            self.flash_intensity = 0.7; // Strong flash for minute change
+            self.flash_start = Some(Instant::now());
+            self.last_minute = minute;
+            self.last_second = second;
+        } else if second != self.last_second {
+            self.flash_intensity = 0.3; // Subtle flash for second change
+            self.flash_start = Some(Instant::now());
+            self.last_second = second;
+        }
+
+        // Decay flash over time
+        if let Some(flash_start) = self.flash_start {
+            let decay_ms = self.animation_speed.flash_decay_ms();
+            let flash_elapsed = flash_start.elapsed().as_millis() as f32;
+            let decay_progress = (flash_elapsed / decay_ms as f32).min(1.0);
+            self.flash_intensity *= 1.0 - decay_progress;
+
+            if self.flash_intensity < 0.01 {
+                self.flash_intensity = 0.0;
+                self.flash_start = None;
+            }
+        }
     }
 
     /// Reads the crossterm events and updates the state of [`App`].
@@ -237,6 +380,7 @@ impl App {
             | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
             (_, KeyCode::Char('t')) => self.toggle_time_format(),
             (_, KeyCode::Char('c')) => self.cycle_color_theme(),
+            (_, KeyCode::Char('a')) => self.cycle_animation(),
             (_, KeyCode::Char('s')) => self.open_settings(),
             _ => {}
         }
@@ -274,12 +418,21 @@ impl App {
         self.current_font = self.settings_dialog.selected_font().to_string();
         self.color_theme = self.settings_dialog.color_theme;
         self.time_format = self.settings_dialog.time_format;
+        self.animation_style = self.settings_dialog.animation_style;
+        self.animation_speed = self.settings_dialog.animation_speed;
+        self.colon_blink = self.settings_dialog.colon_blink;
     }
 
     /// Open settings dialog with current settings.
     fn open_settings(&mut self) {
-        self.settings_dialog
-            .open(&self.current_font, self.color_theme, self.time_format);
+        self.settings_dialog.open(
+            &self.current_font,
+            self.color_theme,
+            self.time_format,
+            self.animation_style,
+            self.animation_speed,
+            self.colon_blink,
+        );
     }
 
     /// Save current settings to config file and close dialog.
@@ -288,6 +441,9 @@ impl App {
         self.config.font_name = self.current_font.clone();
         self.config.color_theme = self.color_theme;
         self.config.time_format = self.time_format;
+        self.config.animation_style = self.animation_style;
+        self.config.animation_speed = self.animation_speed;
+        self.config.colon_blink = self.colon_blink;
 
         if let Err(e) = self.config.save() {
             eprintln!("Warning: Failed to save config: {e}");
@@ -302,6 +458,9 @@ impl App {
         self.current_font = self.settings_dialog.original_font().to_string();
         self.color_theme = self.settings_dialog.original_color_theme();
         self.time_format = self.settings_dialog.original_time_format();
+        self.animation_style = self.settings_dialog.original_animation_style();
+        self.animation_speed = self.settings_dialog.original_animation_speed();
+        self.colon_blink = self.settings_dialog.original_colon_blink();
 
         self.settings_dialog.close();
     }
@@ -314,6 +473,11 @@ impl App {
     /// Cycle through available color themes.
     fn cycle_color_theme(&mut self) {
         self.color_theme = self.color_theme.next();
+    }
+
+    /// Cycle through animation styles.
+    fn cycle_animation(&mut self) {
+        self.animation_style = self.animation_style.next();
     }
 
     /// Set running to false to quit the application.

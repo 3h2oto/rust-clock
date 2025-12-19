@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
-use sigye_core::{ColorTheme, TimeFormat};
+use sigye_core::{AnimationSpeed, AnimationStyle, ColorTheme, TimeFormat};
 
 /// Application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +21,18 @@ pub struct Config {
     /// Time format (12h or 24h).
     #[serde(default)]
     pub time_format: TimeFormat,
+
+    /// Animation style.
+    #[serde(default)]
+    pub animation_style: AnimationStyle,
+
+    /// Animation speed.
+    #[serde(default)]
+    pub animation_speed: AnimationSpeed,
+
+    /// Whether colon blinks.
+    #[serde(default)]
+    pub colon_blink: bool,
 }
 
 fn default_font() -> String {
@@ -33,6 +45,9 @@ impl Default for Config {
             font_name: default_font(),
             color_theme: ColorTheme::default(),
             time_format: TimeFormat::default(),
+            animation_style: AnimationStyle::default(),
+            animation_speed: AnimationSpeed::default(),
+            colon_blink: false,
         }
     }
 }

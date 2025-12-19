@@ -7,7 +7,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
-use sigye_core::{ColorTheme, TimeFormat};
+use sigye_core::{AnimationSpeed, AnimationStyle, ColorTheme, TimeFormat};
 
 /// The settings field currently being edited.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -16,6 +16,9 @@ pub enum SettingsField {
     Font,
     Color,
     TimeFormat,
+    Animation,
+    Speed,
+    ColonBlink,
 }
 
 impl SettingsField {
@@ -24,16 +27,22 @@ impl SettingsField {
         match self {
             Self::Font => Self::Color,
             Self::Color => Self::TimeFormat,
-            Self::TimeFormat => Self::Font,
+            Self::TimeFormat => Self::Animation,
+            Self::Animation => Self::Speed,
+            Self::Speed => Self::ColonBlink,
+            Self::ColonBlink => Self::Font,
         }
     }
 
     /// Move to the previous field.
     pub fn prev(self) -> Self {
         match self {
-            Self::Font => Self::TimeFormat,
+            Self::Font => Self::ColonBlink,
             Self::Color => Self::Font,
             Self::TimeFormat => Self::Color,
+            Self::Animation => Self::TimeFormat,
+            Self::Speed => Self::Animation,
+            Self::ColonBlink => Self::Speed,
         }
     }
 }
@@ -53,12 +62,24 @@ pub struct SettingsDialog {
     pub color_theme: ColorTheme,
     /// Current time format selection.
     pub time_format: TimeFormat,
+    /// Current animation style selection.
+    pub animation_style: AnimationStyle,
+    /// Current animation speed selection.
+    pub animation_speed: AnimationSpeed,
+    /// Current colon blink setting.
+    pub colon_blink: bool,
     /// Original font index (for cancel/revert).
     original_font_index: usize,
     /// Original color theme (for cancel/revert).
     original_color_theme: ColorTheme,
     /// Original time format (for cancel/revert).
     original_time_format: TimeFormat,
+    /// Original animation style (for cancel/revert).
+    original_animation_style: AnimationStyle,
+    /// Original animation speed (for cancel/revert).
+    original_animation_speed: AnimationSpeed,
+    /// Original colon blink (for cancel/revert).
+    original_colon_blink: bool,
 }
 
 impl SettingsDialog {
@@ -71,18 +92,35 @@ impl SettingsDialog {
             available_fonts,
             color_theme: ColorTheme::default(),
             time_format: TimeFormat::default(),
+            animation_style: AnimationStyle::default(),
+            animation_speed: AnimationSpeed::default(),
+            colon_blink: false,
             original_font_index: 0,
             original_color_theme: ColorTheme::default(),
             original_time_format: TimeFormat::default(),
+            original_animation_style: AnimationStyle::default(),
+            original_animation_speed: AnimationSpeed::default(),
+            original_colon_blink: false,
         }
     }
 
     /// Open dialog with current settings.
-    pub fn open(&mut self, font_name: &str, color_theme: ColorTheme, time_format: TimeFormat) {
+    pub fn open(
+        &mut self,
+        font_name: &str,
+        color_theme: ColorTheme,
+        time_format: TimeFormat,
+        animation_style: AnimationStyle,
+        animation_speed: AnimationSpeed,
+        colon_blink: bool,
+    ) {
         self.visible = true;
         self.selected_field = SettingsField::default();
         self.color_theme = color_theme;
         self.time_format = time_format;
+        self.animation_style = animation_style;
+        self.animation_speed = animation_speed;
+        self.colon_blink = colon_blink;
 
         // Find font index
         self.font_index = self
@@ -95,6 +133,9 @@ impl SettingsDialog {
         self.original_font_index = self.font_index;
         self.original_color_theme = color_theme;
         self.original_time_format = time_format;
+        self.original_animation_style = animation_style;
+        self.original_animation_speed = animation_speed;
+        self.original_colon_blink = colon_blink;
     }
 
     /// Close without saving.
@@ -118,6 +159,21 @@ impl SettingsDialog {
     /// Get original time format (for reverting on cancel).
     pub fn original_time_format(&self) -> TimeFormat {
         self.original_time_format
+    }
+
+    /// Get original animation style (for reverting on cancel).
+    pub fn original_animation_style(&self) -> AnimationStyle {
+        self.original_animation_style
+    }
+
+    /// Get original animation speed (for reverting on cancel).
+    pub fn original_animation_speed(&self) -> AnimationSpeed {
+        self.original_animation_speed
+    }
+
+    /// Get original colon blink (for reverting on cancel).
+    pub fn original_colon_blink(&self) -> bool {
+        self.original_colon_blink
     }
 
     /// Move to next field.
@@ -144,6 +200,15 @@ impl SettingsDialog {
             SettingsField::TimeFormat => {
                 self.time_format = self.time_format.toggle();
             }
+            SettingsField::Animation => {
+                self.animation_style = self.animation_style.next();
+            }
+            SettingsField::Speed => {
+                self.animation_speed = self.animation_speed.next();
+            }
+            SettingsField::ColonBlink => {
+                self.colon_blink = !self.colon_blink;
+            }
         }
     }
 
@@ -165,6 +230,15 @@ impl SettingsDialog {
             SettingsField::TimeFormat => {
                 self.time_format = self.time_format.toggle();
             }
+            SettingsField::Animation => {
+                self.animation_style = self.animation_style.prev();
+            }
+            SettingsField::Speed => {
+                self.animation_speed = self.animation_speed.prev();
+            }
+            SettingsField::ColonBlink => {
+                self.colon_blink = !self.colon_blink;
+            }
         }
     }
 
@@ -184,7 +258,7 @@ impl SettingsDialog {
 
         // Calculate centered dialog area
         let dialog_width = 40.min(area.width.saturating_sub(4));
-        let dialog_height = 11.min(area.height.saturating_sub(2));
+        let dialog_height = 17.min(area.height.saturating_sub(2));
 
         let dialog_x = area.x + (area.width.saturating_sub(dialog_width)) / 2;
         let dialog_y = area.y + (area.height.saturating_sub(dialog_height)) / 2;
@@ -212,6 +286,12 @@ impl SettingsDialog {
             Constraint::Length(1), // Color
             Constraint::Length(1), // Spacing
             Constraint::Length(1), // Time Format
+            Constraint::Length(1), // Spacing
+            Constraint::Length(1), // Animation
+            Constraint::Length(1), // Spacing
+            Constraint::Length(1), // Speed
+            Constraint::Length(1), // Spacing
+            Constraint::Length(1), // Colon Blink
             Constraint::Fill(1),   // Bottom space
             Constraint::Length(1), // Help text
         ])
@@ -257,6 +337,44 @@ impl SettingsDialog {
             chunks[5],
         );
 
+        // Render animation field
+        let animation_line = self.render_field(
+            "Animation",
+            self.animation_style.display_name(),
+            self.selected_field == SettingsField::Animation,
+            accent_color,
+        );
+        frame.render_widget(
+            Paragraph::new(animation_line).alignment(Alignment::Center),
+            chunks[7],
+        );
+
+        // Render speed field (grayed out when Animation is None)
+        let speed_line = self.render_field_with_style(
+            "Speed",
+            self.animation_speed.display_name(),
+            self.selected_field == SettingsField::Speed,
+            accent_color,
+            self.animation_style != AnimationStyle::None,
+        );
+        frame.render_widget(
+            Paragraph::new(speed_line).alignment(Alignment::Center),
+            chunks[9],
+        );
+
+        // Render colon blink field
+        let blink_value = if self.colon_blink { "On" } else { "Off" };
+        let blink_line = self.render_field(
+            "Colon Blink",
+            blink_value,
+            self.selected_field == SettingsField::ColonBlink,
+            accent_color,
+        );
+        frame.render_widget(
+            Paragraph::new(blink_line).alignment(Alignment::Center),
+            chunks[11],
+        );
+
         // Render help text
         let help = Line::from(vec![
             Span::styled("↑↓", Style::default().fg(accent_color).bold()),
@@ -268,7 +386,10 @@ impl SettingsDialog {
             Span::styled("Esc", Style::default().fg(accent_color).bold()),
             Span::styled(" cancel", Style::default().dark_gray()),
         ]);
-        frame.render_widget(Paragraph::new(help).alignment(Alignment::Center), chunks[7]);
+        frame.render_widget(
+            Paragraph::new(help).alignment(Alignment::Center),
+            chunks[13],
+        );
     }
 
     /// Render a single settings field line.
@@ -299,5 +420,28 @@ impl SettingsDialog {
             Span::styled(value.to_string(), value_style),
             Span::styled(String::from(" ▶"), arrow_style),
         ])
+    }
+
+    /// Render a single settings field line with enabled/disabled state.
+    fn render_field_with_style(
+        &self,
+        label: &str,
+        value: &str,
+        selected: bool,
+        accent_color: Color,
+        enabled: bool,
+    ) -> Line<'static> {
+        if !enabled {
+            // Grayed out when disabled
+            let gray = Style::default().dark_gray();
+            return Line::from(vec![
+                Span::styled(format!("{label}: "), gray),
+                Span::styled(String::from("◀ "), gray),
+                Span::styled(value.to_string(), gray),
+                Span::styled(String::from(" ▶"), gray),
+            ]);
+        }
+
+        self.render_field(label, value, selected, accent_color)
     }
 }
