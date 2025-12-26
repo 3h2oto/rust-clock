@@ -86,6 +86,11 @@ pub enum BackgroundStyle {
     Starfield,
     MatrixRain,
     GradientWave,
+    // Reactive backgrounds that respond to system resource usage
+    SystemPulse,
+    ResourceWave,
+    DataFlow,
+    HeatMap,
 }
 
 /// All background styles for cycling.
@@ -94,6 +99,10 @@ const ALL_BACKGROUND_STYLES: &[BackgroundStyle] = &[
     BackgroundStyle::Starfield,
     BackgroundStyle::MatrixRain,
     BackgroundStyle::GradientWave,
+    BackgroundStyle::SystemPulse,
+    BackgroundStyle::ResourceWave,
+    BackgroundStyle::DataFlow,
+    BackgroundStyle::HeatMap,
 ];
 
 impl BackgroundStyle {
@@ -128,7 +137,22 @@ impl BackgroundStyle {
             BackgroundStyle::Starfield => "Starfield",
             BackgroundStyle::MatrixRain => "Matrix",
             BackgroundStyle::GradientWave => "Gradient",
+            BackgroundStyle::SystemPulse => "Sys Pulse",
+            BackgroundStyle::ResourceWave => "Resource",
+            BackgroundStyle::DataFlow => "Data Flow",
+            BackgroundStyle::HeatMap => "Heat Map",
         }
+    }
+
+    /// Check if this background style requires system metrics (reactive).
+    pub fn is_reactive(self) -> bool {
+        matches!(
+            self,
+            BackgroundStyle::SystemPulse
+                | BackgroundStyle::ResourceWave
+                | BackgroundStyle::DataFlow
+                | BackgroundStyle::HeatMap
+        )
     }
 }
 

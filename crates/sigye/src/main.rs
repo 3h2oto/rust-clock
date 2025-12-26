@@ -2,6 +2,7 @@
 
 mod background;
 mod settings;
+mod system_metrics;
 
 use std::time::{Duration, Instant};
 
@@ -22,6 +23,7 @@ use sigye_fonts::FontRegistry;
 
 use background::BackgroundState;
 use settings::SettingsDialog;
+use system_metrics::SystemMonitor;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -69,6 +71,8 @@ pub struct App {
     flash_start: Option<Instant>,
     /// Background animation state.
     background_state: BackgroundState,
+    /// System monitor for reactive backgrounds (lazy initialized).
+    system_monitor: Option<SystemMonitor>,
 }
 
 impl App {
@@ -96,6 +100,15 @@ impl App {
         // Get current time for initial state
         let now = chrono::Local::now();
 
+        // Initialize system monitor if reactive background is selected
+        let system_monitor = if config.background_style.is_reactive() {
+            let monitor = SystemMonitor::new();
+            monitor.start();
+            Some(monitor)
+        } else {
+            None
+        };
+
         Self {
             running: false,
             time_format: config.time_format,
@@ -115,6 +128,7 @@ impl App {
             flash_intensity: 0.0,
             flash_start: None,
             background_state: BackgroundState::new(),
+            system_monitor,
         }
     }
 
@@ -135,12 +149,16 @@ impl App {
         // Calculate animation elapsed time
         let elapsed_ms = self.animation_start.elapsed().as_millis() as u64;
 
+        // Get metrics for reactive backgrounds
+        let metrics = self.system_monitor.as_ref().map(|m| m.get_metrics());
+
         // Render background first (behind everything else)
         self.background_state.render(
             frame,
             self.background_style,
             elapsed_ms,
             self.animation_speed,
+            metrics.as_ref(),
         );
 
         // Update flash intensity for reactive animation
@@ -451,6 +469,7 @@ impl App {
         self.animation_speed = self.settings_dialog.animation_speed;
         self.colon_blink = self.settings_dialog.colon_blink;
         self.background_style = self.settings_dialog.background_style;
+        self.update_system_monitor();
     }
 
     /// Open settings dialog with current settings.
@@ -494,6 +513,7 @@ impl App {
         self.animation_speed = self.settings_dialog.original_animation_speed();
         self.colon_blink = self.settings_dialog.original_colon_blink();
         self.background_style = self.settings_dialog.original_background_style();
+        self.update_system_monitor();
 
         self.settings_dialog.close();
     }
@@ -516,6 +536,20 @@ impl App {
     /// Cycle through background styles.
     fn cycle_background(&mut self) {
         self.background_style = self.background_style.next();
+        self.update_system_monitor();
+    }
+
+    /// Start or stop system monitor based on current background style.
+    fn update_system_monitor(&mut self) {
+        if self.background_style.is_reactive() && self.system_monitor.is_none() {
+            // Start monitor for reactive backgrounds
+            let monitor = SystemMonitor::new();
+            monitor.start();
+            self.system_monitor = Some(monitor);
+        } else if !self.background_style.is_reactive() && self.system_monitor.is_some() {
+            // Stop monitor when not using reactive backgrounds
+            self.system_monitor = None;
+        }
     }
 
     /// Set running to false to quit the application.

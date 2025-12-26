@@ -22,6 +22,7 @@ directories = "6.0"
 sigye-core = { version = "0.1.1", path = "crates/sigye-core" }
 sigye-fonts = { version = "0.1.1", path = "crates/sigye-fonts" }
 sigye-config = { version = "0.1.1", path = "crates/sigye-config" }
+sysinfo = "0.33"
 
 [profile.release]
 codegen-units = 1
