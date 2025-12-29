@@ -146,6 +146,7 @@ impl BackgroundState {
     /// Update snowfall column positions.
     fn update_snow(&mut self, elapsed_ms: u64, height: u16, speed: AnimationSpeed) {
         let delta_ms = elapsed_ms.saturating_sub(self.last_update_ms);
+        self.last_update_ms = elapsed_ms;
 
         let fall_speed = speed.snow_fall_speed();
         let delta_y = (delta_ms as f32 / 80.0) * fall_speed;
