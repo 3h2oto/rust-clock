@@ -11,7 +11,8 @@ A beautiful terminal clock with ASCII art fonts.
 ## Features
 
 - **40 bundled FIGlet fonts** - From classic Standard to stylish Star Wars
-- **14 color themes** - Including rainbow and gradient effects
+- **17 color themes** - Including rainbow, gradient, and winter effects
+- **11 background styles** - Starfield, winter themes, and system-reactive visuals
 - **Animated themes** - Shifting, pulsing, wave, and reactive effects
 - **Blinking colon** - Optional colon separator animation
 - **12/24 hour format** - Toggle with a single keypress
@@ -49,6 +50,7 @@ sigye
 | `t` | Toggle 12/24 hour format |
 | `c` | Cycle color theme |
 | `a` | Cycle animation style |
+| `b` | Cycle background style |
 | `s` | Open settings dialog |
 
 ### Settings Dialog
@@ -73,6 +75,7 @@ time_format = "TwentyFourHour"
 animation_style = "None"
 animation_speed = "Medium"
 colon_blink = false
+background_style = "None"
 ```
 
 ### Custom Fonts
@@ -93,6 +96,11 @@ Cyan, Green, White, Magenta, Yellow, Red, Blue
 - **Neon** - Magenta to Cyan (synthwave)
 - **Fire** - Red to Orange to Yellow
 
+### Winter Gradients
+- **Frost** - White to Ice Blue to Steel Blue
+- **Aurora** - Green to Cyan to Blue to Purple
+- **Winter** - Deep Blue to Royal Blue to Ice Blue
+
 ## Animations
 
 ### Animation Styles
@@ -104,6 +112,26 @@ Cyan, Green, White, Magenta, Yellow, Red, Blue
 
 ### Animation Speeds
 Slow, Medium (default), Fast
+
+## Background Styles
+
+### Basic
+- **None** - No background (default)
+- **Starfield** - Twinkling animated stars
+- **Matrix Rain** - Falling green characters
+- **Gradient Wave** - Animated color wave
+
+### Winter Themes
+- **Snowfall** - Animated falling snowflakes with drift
+- **Frost** - Frost crystals growing from screen edges
+- **Aurora** - Aurora Borealis waves in green/cyan/blue/purple
+
+### System-Reactive
+Real-time visualizations driven by system metrics:
+- **SystemPulse** - CPU usage drives pulse intensity
+- **ResourceWave** - Memory usage drives wave amplitude
+- **DataFlow** - Network I/O drives particle density
+- **HeatMap** - Combined metrics as heat intensity
 
 ## Bundled Fonts
 
