@@ -86,6 +86,10 @@ pub enum BackgroundStyle {
     Starfield,
     MatrixRain,
     GradientWave,
+    // Winter theme backgrounds
+    Snowfall,
+    Frost,
+    Aurora,
     // Reactive backgrounds that respond to system resource usage
     SystemPulse,
     ResourceWave,
@@ -99,6 +103,9 @@ const ALL_BACKGROUND_STYLES: &[BackgroundStyle] = &[
     BackgroundStyle::Starfield,
     BackgroundStyle::MatrixRain,
     BackgroundStyle::GradientWave,
+    BackgroundStyle::Snowfall,
+    BackgroundStyle::Frost,
+    BackgroundStyle::Aurora,
     BackgroundStyle::SystemPulse,
     BackgroundStyle::ResourceWave,
     BackgroundStyle::DataFlow,
@@ -137,6 +144,9 @@ impl BackgroundStyle {
             BackgroundStyle::Starfield => "Starfield",
             BackgroundStyle::MatrixRain => "Matrix",
             BackgroundStyle::GradientWave => "Gradient",
+            BackgroundStyle::Snowfall => "Snowfall",
+            BackgroundStyle::Frost => "Frost",
+            BackgroundStyle::Aurora => "Aurora",
             BackgroundStyle::SystemPulse => "Sys Pulse",
             BackgroundStyle::ResourceWave => "Resource",
             BackgroundStyle::DataFlow => "Data Flow",
@@ -268,6 +278,33 @@ impl AnimationSpeed {
             AnimationSpeed::Fast => 1500,
         }
     }
+
+    /// Get the snowfall speed multiplier.
+    pub fn snow_fall_speed(self) -> f32 {
+        match self {
+            AnimationSpeed::Slow => 0.3,
+            AnimationSpeed::Medium => 0.6,
+            AnimationSpeed::Fast => 1.0,
+        }
+    }
+
+    /// Get the frost growth period in milliseconds.
+    pub fn frost_growth_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 8000,
+            AnimationSpeed::Medium => 5000,
+            AnimationSpeed::Fast => 3000,
+        }
+    }
+
+    /// Get the aurora wave period in milliseconds.
+    pub fn aurora_wave_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 6000,
+            AnimationSpeed::Medium => 4000,
+            AnimationSpeed::Fast => 2000,
+        }
+    }
 }
 
 /// Color theme for the clock display.
@@ -289,6 +326,10 @@ pub enum ColorTheme {
     GradientOcean,
     GradientNeon,
     GradientFire,
+    // Winter color themes
+    GradientFrost,
+    GradientAurora,
+    GradientWinter,
 }
 
 /// All color themes in order for cycling.
@@ -307,6 +348,9 @@ const ALL_THEMES: &[ColorTheme] = &[
     ColorTheme::GradientOcean,
     ColorTheme::GradientNeon,
     ColorTheme::GradientFire,
+    ColorTheme::GradientFrost,
+    ColorTheme::GradientAurora,
+    ColorTheme::GradientWinter,
 ];
 
 impl ColorTheme {
@@ -344,6 +388,8 @@ impl ColorTheme {
             }
             ColorTheme::GradientWarm | ColorTheme::GradientFire => Color::Red,
             ColorTheme::GradientCool | ColorTheme::GradientOcean => Color::Cyan,
+            ColorTheme::GradientFrost | ColorTheme::GradientWinter => Color::Cyan,
+            ColorTheme::GradientAurora => Color::Green,
         }
     }
 
@@ -358,6 +404,9 @@ impl ColorTheme {
                 | ColorTheme::GradientOcean
                 | ColorTheme::GradientNeon
                 | ColorTheme::GradientFire
+                | ColorTheme::GradientFrost
+                | ColorTheme::GradientAurora
+                | ColorTheme::GradientWinter
         )
     }
 
@@ -485,6 +534,82 @@ impl ColorTheme {
                     Color::Rgb(255, g, 0)
                 }
             }
+            ColorTheme::GradientFrost => {
+                // White -> Ice Blue -> Steel Blue
+                let progress = if width > 0 {
+                    (x as f32) / (width.max(1) as f32)
+                } else {
+                    0.0
+                };
+                if progress < 0.5 {
+                    // White to Ice Blue
+                    let t = progress * 2.0;
+                    let r = 255 - ((255 - 176) as f32 * t) as u8;
+                    let g = 255 - ((255 - 224) as f32 * t) as u8;
+                    let b = 255 - ((255 - 230) as f32 * t) as u8;
+                    Color::Rgb(r, g, b)
+                } else {
+                    // Ice Blue to Steel Blue
+                    let t = (progress - 0.5) * 2.0;
+                    let r = 176 - ((176 - 70) as f32 * t) as u8;
+                    let g = 224 - ((224 - 130) as f32 * t) as u8;
+                    let b = 230 - ((230 - 180) as f32 * t) as u8;
+                    Color::Rgb(r, g, b)
+                }
+            }
+            ColorTheme::GradientAurora => {
+                // Green -> Cyan -> Blue -> Purple (aurora colors)
+                let progress = if width > 0 {
+                    (x as f32) / (width.max(1) as f32)
+                } else {
+                    0.0
+                };
+                if progress < 0.33 {
+                    // Green to Cyan
+                    let t = progress * 3.0;
+                    let r = (0.0 + 0.0 * t) as u8;
+                    let g = (255.0 - 128.0 * t) as u8;
+                    let b = (127.0 + 128.0 * t) as u8;
+                    Color::Rgb(r, g, b)
+                } else if progress < 0.66 {
+                    // Cyan to Blue
+                    let t = (progress - 0.33) * 3.0;
+                    let r = (0.0 + 65.0 * t) as u8;
+                    let g = (127.0 - 22.0 * t) as u8;
+                    let b = (255.0 - 30.0 * t) as u8;
+                    Color::Rgb(r, g, b)
+                } else {
+                    // Blue to Purple
+                    let t = (progress - 0.66) * 3.0;
+                    let r = (65.0 + 73.0 * t) as u8;
+                    let g = (105.0 - 62.0 * t) as u8;
+                    let b = (225.0 + 1.0 * t) as u8;
+                    Color::Rgb(r, g, b)
+                }
+            }
+            ColorTheme::GradientWinter => {
+                // Deep Blue -> Royal Blue -> Ice Blue
+                let progress = if width > 0 {
+                    (x as f32) / (width.max(1) as f32)
+                } else {
+                    0.0
+                };
+                if progress < 0.5 {
+                    // Deep Blue to Royal Blue
+                    let t = progress * 2.0;
+                    let r = (25.0 + 40.0 * t) as u8;
+                    let g = (25.0 + 80.0 * t) as u8;
+                    let b = (112.0 + 113.0 * t) as u8;
+                    Color::Rgb(r, g, b)
+                } else {
+                    // Royal Blue to Ice Blue
+                    let t = (progress - 0.5) * 2.0;
+                    let r = (65.0 + 70.0 * t) as u8;
+                    let g = (105.0 + 101.0 * t) as u8;
+                    let b = (225.0 + 25.0 * t) as u8;
+                    Color::Rgb(r, g, b)
+                }
+            }
             // Static themes just return their color
             _ => self.color(),
         }
@@ -507,6 +632,9 @@ impl ColorTheme {
             ColorTheme::GradientOcean => "Ocean",
             ColorTheme::GradientNeon => "Neon",
             ColorTheme::GradientFire => "Fire",
+            ColorTheme::GradientFrost => "Frost",
+            ColorTheme::GradientAurora => "Aurora",
+            ColorTheme::GradientWinter => "Winter",
         }
     }
 }

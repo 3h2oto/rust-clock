@@ -19,6 +19,12 @@ const MATRIX_CHARS: &[char] = &[
     'チ', 'ツ', 'テ', 'ト', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 ];
 
+/// Characters used for snowfall background.
+const SNOW_CHARS: &[char] = &['*', '·', '•', '❄', '❅', '❆', '✦', '✧', '°'];
+
+/// Characters used for frost crystals.
+const FROST_CHARS: &[char] = &['·', '•', '*', '×', '✕', '✱', '░'];
+
 /// State for a single matrix rain column.
 #[derive(Debug, Clone)]
 struct MatrixColumn {
@@ -32,11 +38,28 @@ struct MatrixColumn {
     char_seed: usize,
 }
 
+/// State for a single snowfall column.
+#[derive(Debug, Clone)]
+struct SnowColumn {
+    /// Current y position of the snowflake.
+    y: f32,
+    /// Speed multiplier for this column.
+    speed: f32,
+    /// Horizontal drift phase offset.
+    drift_phase: f32,
+    /// Size category (0=small, 1=medium, 2=large).
+    size: u8,
+    /// Seed for character generation.
+    char_seed: usize,
+}
+
 /// Background animation state.
 #[derive(Debug)]
 pub struct BackgroundState {
     /// Matrix rain column states.
     matrix_columns: Vec<MatrixColumn>,
+    /// Snowfall column states.
+    snow_columns: Vec<SnowColumn>,
     /// Last known terminal width.
     last_width: u16,
     /// Last known terminal height.
@@ -56,6 +79,7 @@ impl BackgroundState {
     pub fn new() -> Self {
         Self {
             matrix_columns: Vec::new(),
+            snow_columns: Vec::new(),
             last_width: 0,
             last_height: 0,
             last_update_ms: 0,
@@ -84,6 +108,23 @@ impl BackgroundState {
         self.last_height = height;
     }
 
+    /// Initialize or reinitialize snowfall columns for the given dimensions.
+    fn init_snow_columns(&mut self, width: u16, height: u16) {
+        self.snow_columns = (0..width)
+            .map(|x| {
+                let x = x as usize;
+                let stagger = ((x * 11 + 7) % (height as usize * 3)) as f32;
+                SnowColumn {
+                    y: -stagger,
+                    speed: 0.2 + ((x * 17) % 10) as f32 / 20.0,
+                    drift_phase: (x * 23) as f32 / 100.0,
+                    size: ((x * 13) % 3) as u8,
+                    char_seed: x * 19,
+                }
+            })
+            .collect();
+    }
+
     /// Update matrix column positions.
     fn update_matrix(&mut self, elapsed_ms: u64, height: u16, speed: AnimationSpeed) {
         let delta_ms = elapsed_ms.saturating_sub(self.last_update_ms);
@@ -97,6 +138,22 @@ impl BackgroundState {
             // Reset column when it goes off screen
             if col.y > (height as f32 + col.trail_length as f32) {
                 col.y = -(col.trail_length as f32);
+                col.char_seed = col.char_seed.wrapping_add(1);
+            }
+        }
+    }
+
+    /// Update snowfall column positions.
+    fn update_snow(&mut self, elapsed_ms: u64, height: u16, speed: AnimationSpeed) {
+        let delta_ms = elapsed_ms.saturating_sub(self.last_update_ms);
+
+        let fall_speed = speed.snow_fall_speed();
+        let delta_y = (delta_ms as f32 / 80.0) * fall_speed;
+
+        for col in &mut self.snow_columns {
+            col.y += delta_y * col.speed;
+            if col.y > height as f32 + 2.0 {
+                col.y = -2.0;
                 col.char_seed = col.char_seed.wrapping_add(1);
             }
         }
@@ -127,16 +184,31 @@ impl BackgroundState {
             return;
         }
 
-        // Reinitialize if dimensions changed
+        // Reinitialize if dimensions changed or columns not initialized
+        let dimensions_changed = width != self.last_width || height != self.last_height;
+
         if style == BackgroundStyle::MatrixRain
-            && (width != self.last_width || height != self.last_height)
+            && (dimensions_changed || self.matrix_columns.is_empty())
         {
             self.init_matrix_columns(width, height);
         }
+        if style == BackgroundStyle::Snowfall
+            && (dimensions_changed || self.snow_columns.is_empty())
+        {
+            self.init_snow_columns(width, height);
+        }
 
-        // Update matrix state
+        if dimensions_changed {
+            self.last_width = width;
+            self.last_height = height;
+        }
+
+        // Update animation states
         if style == BackgroundStyle::MatrixRain {
             self.update_matrix(elapsed_ms, height, speed);
+        }
+        if style == BackgroundStyle::Snowfall {
+            self.update_snow(elapsed_ms, height, speed);
         }
 
         let lines: Vec<Line> = (0..height)
@@ -168,6 +240,13 @@ impl BackgroundState {
             BackgroundStyle::MatrixRain => self.render_matrix_char(x, y, height),
             BackgroundStyle::GradientWave => {
                 self.render_gradient_char(x, y, width, height, elapsed_ms, speed)
+            }
+            BackgroundStyle::Snowfall => self.render_snowfall_char(x, y, elapsed_ms, speed),
+            BackgroundStyle::Frost => {
+                self.render_frost_char(x, y, width, height, elapsed_ms, speed)
+            }
+            BackgroundStyle::Aurora => {
+                self.render_aurora_char(x, y, width, height, elapsed_ms, speed)
             }
             // Reactive backgrounds are handled separately in render_reactive()
             BackgroundStyle::SystemPulse
@@ -292,6 +371,202 @@ impl BackgroundState {
         } else {
             Span::styled(ch.to_string(), Style::new().fg(color))
         }
+    }
+
+    /// Render a snowfall character.
+    fn render_snowfall_char(
+        &self,
+        x: u16,
+        y: u16,
+        elapsed_ms: u64,
+        _speed: AnimationSpeed,
+    ) -> Span<'static> {
+        let x_idx = x as usize;
+        let y_f = y as f32;
+
+        if x_idx >= self.snow_columns.len() {
+            return Span::raw(" ");
+        }
+
+        let col = &self.snow_columns[x_idx];
+
+        // Calculate horizontal drift for visual effect
+        let drift_period = 3000.0;
+        let drift =
+            ((elapsed_ms as f32 / drift_period + col.drift_phase) * 2.0 * std::f32::consts::PI)
+                .sin()
+                * 1.5;
+
+        // Check if snowflake is at this position (applying drift effect)
+        let flake_y = col.y + drift * 0.1;
+        let distance = (y_f - flake_y).abs();
+
+        if distance < 0.8 {
+            // Select character based on size
+            let char_idx = match col.size {
+                0 => col.char_seed % 3,
+                1 => 3 + col.char_seed % 3,
+                _ => 6 + col.char_seed % 3,
+            };
+            let ch = SNOW_CHARS[char_idx % SNOW_CHARS.len()];
+
+            // Color based on size - using deeper blues visible on both light and dark themes
+            let color = match col.size {
+                0 => Color::Rgb(70, 100, 160), // Small - dark steel blue
+                1 => Color::Rgb(65, 105, 225), // Medium - royal blue
+                _ => Color::Rgb(30, 144, 255), // Large - dodger blue
+            };
+
+            Span::styled(ch.to_string(), Style::new().fg(color))
+        } else {
+            Span::raw(" ")
+        }
+    }
+
+    /// Render a frost crystal character.
+    fn render_frost_char(
+        &self,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+        elapsed_ms: u64,
+        speed: AnimationSpeed,
+    ) -> Span<'static> {
+        let x_f = x as f32;
+        let y_f = y as f32;
+        let w_f = width as f32;
+        let h_f = height as f32;
+
+        // Calculate distance from nearest edge
+        let edge_dist_x = x_f.min(w_f - 1.0 - x_f);
+        let edge_dist_y = y_f.min(h_f - 1.0 - y_f);
+        let edge_dist = edge_dist_x.min(edge_dist_y * 2.0);
+
+        // Frost growth from edges - controlled by time
+        let growth_period = speed.frost_growth_period_ms();
+        let growth_phase =
+            ((elapsed_ms % growth_period) as f32 / growth_period as f32) * std::f32::consts::PI;
+        let growth_factor = growth_phase.sin() * 0.3 + 0.7;
+
+        let max_frost_depth = (w_f.min(h_f) / 3.0) * growth_factor;
+
+        if edge_dist > max_frost_depth {
+            return Span::raw(" ");
+        }
+
+        // Crystal pattern using pseudo-random based on position
+        let seed = (x as usize)
+            .wrapping_mul(31)
+            .wrapping_add((y as usize).wrapping_mul(17));
+
+        // Density decreases toward center
+        let density_threshold = ((edge_dist / max_frost_depth) * 85.0) as usize;
+        if seed % 100 > (100 - density_threshold).max(15) {
+            return Span::raw(" ");
+        }
+
+        // Character selection
+        let char_idx = seed % FROST_CHARS.len();
+        let ch = FROST_CHARS[char_idx];
+
+        // Color based on distance from edge (darker toward center)
+        let depth_ratio = edge_dist / max_frost_depth;
+        let base_color = if depth_ratio < 0.3 {
+            (200u8, 230u8, 255u8)
+        } else if depth_ratio < 0.6 {
+            (135, 206, 235)
+        } else {
+            (70, 130, 180)
+        };
+
+        // Add shimmer effect
+        let shimmer = (elapsed_ms as f32 / 500.0 + seed as f32 * 0.1).sin() * 0.15 + 0.85;
+        let r = (base_color.0 as f32 * shimmer) as u8;
+        let g = (base_color.1 as f32 * shimmer) as u8;
+        let b = (base_color.2 as f32 * shimmer) as u8;
+
+        Span::styled(ch.to_string(), Style::new().fg(Color::Rgb(r, g, b)))
+    }
+
+    /// Render an aurora borealis character.
+    fn render_aurora_char(
+        &self,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+        elapsed_ms: u64,
+        speed: AnimationSpeed,
+    ) -> Span<'static> {
+        let x_norm = x as f32 / width.max(1) as f32;
+        let y_norm = y as f32 / height.max(1) as f32;
+
+        let period = speed.aurora_wave_period_ms();
+        let time_phase = (elapsed_ms % period) as f32 / period as f32;
+
+        // Multiple overlapping waves for aurora curtain effect
+        let wave1 = ((x_norm * 3.0 + time_phase * 2.0 * std::f32::consts::PI).sin() + 1.0) / 2.0;
+        let wave2 =
+            ((x_norm * 5.0 - time_phase * 1.5 * std::f32::consts::PI + 1.0).sin() + 1.0) / 2.0;
+        let wave3 = ((x_norm * 2.0 + time_phase * std::f32::consts::PI + 2.0).sin() + 1.0) / 2.0;
+
+        // Combine waves
+        let combined_wave = wave1 * 0.5 + wave2 * 0.3 + wave3 * 0.2;
+
+        // Vertical falloff (aurora is brighter at top)
+        let vertical_factor = 1.0 - y_norm.powf(0.5);
+
+        // Final intensity
+        let intensity = combined_wave * vertical_factor;
+
+        if intensity < 0.15 {
+            return Span::raw(" ");
+        }
+
+        // Select character based on intensity
+        let ch = if intensity > 0.7 {
+            '▓'
+        } else if intensity > 0.5 {
+            '▒'
+        } else if intensity > 0.3 {
+            '░'
+        } else {
+            return Span::raw(" ");
+        };
+
+        // Aurora colors - cycle through greens, blues, purples
+        let color_phase = (elapsed_ms as f32 / 10000.0 + x_norm * 0.5) % 1.0;
+
+        let (r, g, b) = if color_phase < 0.4 {
+            // Green phase
+            let t = color_phase / 0.4;
+            (50, (127.0 + 128.0 * t) as u8, (80.0 + 50.0 * t) as u8)
+        } else if color_phase < 0.7 {
+            // Blue phase
+            let t = (color_phase - 0.4) / 0.3;
+            (
+                (50.0 * (1.0 - t)) as u8,
+                (255.0 - 100.0 * t) as u8,
+                (150.0 + 105.0 * t) as u8,
+            )
+        } else {
+            // Purple/pink phase
+            let t = (color_phase - 0.7) / 0.3;
+            (
+                (80.0 + 80.0 * t) as u8,
+                (155.0 - 50.0 * t) as u8,
+                (255.0 - 30.0 * t) as u8,
+            )
+        };
+
+        // Apply vertical dimming
+        let dimming = 0.3 + vertical_factor * 0.7;
+        let r = (r as f32 * dimming) as u8;
+        let g = (g as f32 * dimming) as u8;
+        let b = (b as f32 * dimming) as u8;
+
+        Span::styled(ch.to_string(), Style::new().fg(Color::Rgb(r, g, b)))
     }
 
     /// Render reactive backgrounds that respond to system metrics.
