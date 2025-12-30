@@ -66,6 +66,8 @@ pub struct BackgroundState {
     last_height: u16,
     /// Last update time in milliseconds.
     last_update_ms: u64,
+    /// Seed captured at initialization for randomness.
+    init_seed: u64,
 }
 
 impl Default for BackgroundState {
@@ -77,12 +79,21 @@ impl Default for BackgroundState {
 impl BackgroundState {
     /// Create a new background state.
     pub fn new() -> Self {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        // Capture system time as seed for randomness
+        let init_seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos() as u64)
+            .unwrap_or(0);
+
         Self {
             matrix_columns: Vec::new(),
             snow_columns: Vec::new(),
             last_width: 0,
             last_height: 0,
             last_update_ms: 0,
+            init_seed,
         }
     }
 
@@ -110,16 +121,20 @@ impl BackgroundState {
 
     /// Initialize or reinitialize snowfall columns for the given dimensions.
     fn init_snow_columns(&mut self, width: u16, height: u16) {
+        let seed = self.init_seed;
         self.snow_columns = (0..width)
             .map(|x| {
                 let x = x as usize;
-                let stagger = ((x * 11 + 7) % (height as usize * 3)) as f32;
+                // Mix column index with time-based seed for better randomness
+                let mixed = x.wrapping_mul(31).wrapping_add(seed as usize);
+                let stagger =
+                    ((mixed.wrapping_mul(11).wrapping_add(7)) % (height as usize * 3)) as f32;
                 SnowColumn {
                     y: -stagger,
-                    speed: 0.2 + ((x * 17) % 10) as f32 / 20.0,
-                    drift_phase: (x * 23) as f32 / 100.0,
-                    size: ((x * 13) % 3) as u8,
-                    char_seed: x * 19,
+                    speed: 0.2 + ((mixed.wrapping_mul(17)) % 10) as f32 / 20.0,
+                    drift_phase: ((mixed.wrapping_mul(23)) % 100) as f32 / 100.0,
+                    size: ((mixed.wrapping_mul(13)) % 3) as u8,
+                    char_seed: mixed.wrapping_mul(19),
                 }
             })
             .collect();
