@@ -15,6 +15,7 @@ categories = ["command-line-utilities"]
 sigye-core.workspace = true
 sigye-config.workspace = true
 sigye-fonts.workspace = true
+sigye-background.workspace = true
 ratatui.workspace = true
 crossterm.workspace = true
 chrono.workspace = true

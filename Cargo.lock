@@ -1384,10 +1384,19 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ratatui",
+ "sigye-background",
  "sigye-config",
  "sigye-core",
  "sigye-fonts",
  "sysinfo",
+]
+
+[[package]]
+name = "sigye-background"
+version = "0.2.0"
+dependencies = [
+ "ratatui",
+ "sigye-core",
 ]
 
 [[package]]

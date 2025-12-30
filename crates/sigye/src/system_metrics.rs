@@ -3,47 +3,9 @@
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
+
+use sigye_core::SystemMetrics;
 use sysinfo::{Networks, System};
-
-/// System resource metrics for reactive backgrounds.
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct SystemMetrics {
-    /// CPU usage as a percentage (0.0 - 1.0).
-    pub cpu_usage: f32,
-    /// Memory usage as a percentage (0.0 - 1.0).
-    pub memory_usage: f32,
-    /// Network receive rate, normalized (0.0 - 1.0).
-    pub network_rx_rate: f32,
-    /// Network transmit rate, normalized (0.0 - 1.0).
-    pub network_tx_rate: f32,
-    /// Disk read rate, normalized (0.0 - 1.0).
-    pub disk_read_rate: f32,
-    /// Disk write rate, normalized (0.0 - 1.0).
-    pub disk_write_rate: f32,
-    /// Battery level (0.0 - 1.0), None if no battery.
-    pub battery_level: Option<f32>,
-    /// Whether battery is charging, None if no battery.
-    pub battery_charging: Option<bool>,
-    /// Last update timestamp.
-    pub last_update: Instant,
-}
-
-impl Default for SystemMetrics {
-    fn default() -> Self {
-        Self {
-            cpu_usage: 0.0,
-            memory_usage: 0.0,
-            network_rx_rate: 0.0,
-            network_tx_rate: 0.0,
-            disk_read_rate: 0.0,
-            disk_write_rate: 0.0,
-            battery_level: None,
-            battery_charging: None,
-            last_update: Instant::now(),
-        }
-    }
-}
 
 /// Shared state for tracking max observed values (for normalization).
 #[allow(dead_code)]
@@ -178,7 +140,6 @@ impl SystemMonitor {
                     disk_write_rate,
                     battery_level,
                     battery_charging,
-                    last_update: Instant::now(),
                 };
 
                 // Update shared metrics

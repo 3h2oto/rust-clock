@@ -1,0 +1,13 @@
+[package]
+name = "sigye-background"
+description = "Background animations for sigye terminal clock"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+sigye-core.workspace = true
+ratatui.workspace = true

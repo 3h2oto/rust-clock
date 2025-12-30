@@ -1,4 +1,4 @@
-# sigye
+# sigye (시계)
 
 [![Crates.io](https://img.shields.io/crates/v/sigye)](https://crates.io/crates/sigye)
 [![License](https://img.shields.io/crates/l/sigye)](https://github.com/am2rican5/sigye/blob/main/LICENSE)

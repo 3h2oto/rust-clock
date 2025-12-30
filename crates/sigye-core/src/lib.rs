@@ -3,6 +3,29 @@
 use ratatui::style::Color;
 use serde::{Deserialize, Serialize};
 
+/// System resource metrics for reactive backgrounds.
+///
+/// All values are normalized to the range 0.0 - 1.0.
+#[derive(Debug, Clone, Default)]
+pub struct SystemMetrics {
+    /// CPU usage as a percentage (0.0 - 1.0).
+    pub cpu_usage: f32,
+    /// Memory usage as a percentage (0.0 - 1.0).
+    pub memory_usage: f32,
+    /// Network receive rate, normalized (0.0 - 1.0).
+    pub network_rx_rate: f32,
+    /// Network transmit rate, normalized (0.0 - 1.0).
+    pub network_tx_rate: f32,
+    /// Disk read rate, normalized (0.0 - 1.0).
+    pub disk_read_rate: f32,
+    /// Disk write rate, normalized (0.0 - 1.0).
+    pub disk_write_rate: f32,
+    /// Battery level (0.0 - 1.0), None if no battery.
+    pub battery_level: Option<f32>,
+    /// Whether battery is charging, None if no battery.
+    pub battery_charging: Option<bool>,
+}
+
 /// Time format for the clock display.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TimeFormat {

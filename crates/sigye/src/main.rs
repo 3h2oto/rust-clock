@@ -1,6 +1,5 @@
 //! sigye - A terminal clock application with configurable fonts.
 
-mod background;
 mod settings;
 mod system_metrics;
 
@@ -21,8 +20,8 @@ use sigye_core::{
 };
 use sigye_fonts::FontRegistry;
 
-use background::BackgroundState;
 use settings::SettingsDialog;
+use sigye_background::BackgroundState;
 use system_metrics::SystemMonitor;
 
 fn main() -> color_eyre::Result<()> {
