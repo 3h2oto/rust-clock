@@ -113,6 +113,13 @@ pub enum BackgroundStyle {
     Snowfall,
     Frost,
     Aurora,
+    // Weather theme backgrounds
+    Sunny,
+    Rainy,
+    Stormy,
+    Windy,
+    Cloudy,
+    Foggy,
     // Reactive backgrounds that respond to system resource usage
     SystemPulse,
     ResourceWave,
@@ -129,6 +136,12 @@ const ALL_BACKGROUND_STYLES: &[BackgroundStyle] = &[
     BackgroundStyle::Snowfall,
     BackgroundStyle::Frost,
     BackgroundStyle::Aurora,
+    BackgroundStyle::Sunny,
+    BackgroundStyle::Rainy,
+    BackgroundStyle::Stormy,
+    BackgroundStyle::Windy,
+    BackgroundStyle::Cloudy,
+    BackgroundStyle::Foggy,
     BackgroundStyle::SystemPulse,
     BackgroundStyle::ResourceWave,
     BackgroundStyle::DataFlow,
@@ -170,6 +183,12 @@ impl BackgroundStyle {
             BackgroundStyle::Snowfall => "Snowfall",
             BackgroundStyle::Frost => "Frost",
             BackgroundStyle::Aurora => "Aurora",
+            BackgroundStyle::Sunny => "Sunny",
+            BackgroundStyle::Rainy => "Rainy",
+            BackgroundStyle::Stormy => "Stormy",
+            BackgroundStyle::Windy => "Windy",
+            BackgroundStyle::Cloudy => "Cloudy",
+            BackgroundStyle::Foggy => "Foggy",
             BackgroundStyle::SystemPulse => "Sys Pulse",
             BackgroundStyle::ResourceWave => "Resource",
             BackgroundStyle::DataFlow => "Data Flow",
@@ -326,6 +345,62 @@ impl AnimationSpeed {
             AnimationSpeed::Slow => 6000,
             AnimationSpeed::Medium => 4000,
             AnimationSpeed::Fast => 2000,
+        }
+    }
+
+    // Weather animation timing methods
+
+    /// Get the rain fall speed multiplier.
+    pub fn rain_fall_speed(self) -> f32 {
+        match self {
+            AnimationSpeed::Slow => 0.8,
+            AnimationSpeed::Medium => 1.5,
+            AnimationSpeed::Fast => 2.5,
+        }
+    }
+
+    /// Get the lightning flash interval range in milliseconds (min, max).
+    pub fn lightning_interval_ms(self) -> (u64, u64) {
+        match self {
+            AnimationSpeed::Slow => (6000, 12000),
+            AnimationSpeed::Medium => (4000, 8000),
+            AnimationSpeed::Fast => (2000, 5000),
+        }
+    }
+
+    /// Get the wind streak speed multiplier.
+    pub fn wind_streak_speed(self) -> f32 {
+        match self {
+            AnimationSpeed::Slow => 0.5,
+            AnimationSpeed::Medium => 1.0,
+            AnimationSpeed::Fast => 2.0,
+        }
+    }
+
+    /// Get the cloud drift period in milliseconds.
+    pub fn cloud_drift_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 8000,
+            AnimationSpeed::Medium => 5000,
+            AnimationSpeed::Fast => 3000,
+        }
+    }
+
+    /// Get the sun ray shimmer period in milliseconds.
+    pub fn sun_shimmer_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 2000,
+            AnimationSpeed::Medium => 1200,
+            AnimationSpeed::Fast => 600,
+        }
+    }
+
+    /// Get the fog pulse period in milliseconds.
+    pub fn fog_pulse_period_ms(self) -> u64 {
+        match self {
+            AnimationSpeed::Slow => 6000,
+            AnimationSpeed::Medium => 4000,
+            AnimationSpeed::Fast => 2500,
         }
     }
 }

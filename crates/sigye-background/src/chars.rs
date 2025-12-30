@@ -14,3 +14,23 @@ pub const SNOW_CHARS: &[char] = &['*', '·', '•', '❄', '❅', '❆', '✦', 
 
 /// Characters used for frost crystals.
 pub const FROST_CHARS: &[char] = &['·', '•', '*', '×', '✕', '✱', '░'];
+
+// Weather character constants
+
+/// Characters used for rain drops - vertical streaks.
+pub const RAIN_CHARS: &[char] = &['│', '|', '¦', '┃', '╏', '┊', '┆'];
+
+/// Characters used for heavy storm rain - more intense.
+pub const STORM_RAIN_CHARS: &[char] = &['┃', '║', '│', '|', '/', '\\'];
+
+/// Characters used for sun rays and shimmer.
+pub const SUN_CHARS: &[char] = &['·', '•', '*', '✦', '✧', '○', '◌'];
+
+/// Characters used for wind streaks - horizontal motion.
+pub const WIND_CHARS: &[char] = &['─', '-', '~', '∼', '≈', '━', '╌', '╍'];
+
+/// Characters used for cloud puffs and density.
+pub const CLOUD_CHARS: &[char] = &['░', '▒', '▓', '·', '•', '○', '◌', '◦'];
+
+/// Characters used for fog/mist - soft wisps and dots.
+pub const FOG_CHARS: &[char] = &['·', '.', '\'', ':', '°', '∙', ','];

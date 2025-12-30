@@ -7,7 +7,7 @@ use ratatui::{
 };
 use sigye_core::{AnimationSpeed, BackgroundStyle, SystemMetrics};
 
-use crate::animations::{matrix, reactive, snow, stateless};
+use crate::animations::{matrix, reactive, stateless, weather};
 
 /// Background animation state.
 #[derive(Debug)]
@@ -15,7 +15,13 @@ pub struct BackgroundState {
     /// Matrix rain column states.
     matrix_columns: Vec<matrix::MatrixColumn>,
     /// Snowfall column states.
-    snow_columns: Vec<snow::SnowColumn>,
+    snow_columns: Vec<weather::SnowColumn>,
+    /// Rain column states (for Rainy background).
+    rain_columns: Vec<weather::RainColumn>,
+    /// Storm state (for Stormy background).
+    storm_state: Option<weather::StormState>,
+    /// Wind streak states (for Windy background).
+    wind_streaks: Vec<weather::WindStreak>,
     /// Last known terminal width.
     last_width: u16,
     /// Last known terminal height.
@@ -46,6 +52,9 @@ impl BackgroundState {
         Self {
             matrix_columns: Vec::new(),
             snow_columns: Vec::new(),
+            rain_columns: Vec::new(),
+            storm_state: None,
+            wind_streaks: Vec::new(),
             last_width: 0,
             last_height: 0,
             last_update_ms: 0,
@@ -89,7 +98,23 @@ impl BackgroundState {
         if style == BackgroundStyle::Snowfall
             && (dimensions_changed || self.snow_columns.is_empty())
         {
-            self.snow_columns = snow::init_columns(width, height, self.init_seed);
+            self.snow_columns = weather::init_snow_columns(width, height, self.init_seed);
+        }
+        // Weather animation initialization
+        if style == BackgroundStyle::Rainy
+            && (dimensions_changed || self.rain_columns.is_empty())
+        {
+            self.rain_columns = weather::init_rain_columns(width, height, self.init_seed);
+        }
+        if style == BackgroundStyle::Stormy
+            && (dimensions_changed || self.storm_state.is_none())
+        {
+            self.storm_state = Some(weather::init_storm(width, height, self.init_seed));
+        }
+        if style == BackgroundStyle::Windy
+            && (dimensions_changed || self.wind_streaks.is_empty())
+        {
+            self.wind_streaks = weather::init_wind_streaks(width, height, self.init_seed);
         }
 
         if dimensions_changed {
@@ -106,7 +131,19 @@ impl BackgroundState {
             matrix::update(&mut self.matrix_columns, delta_ms, height, speed);
         }
         if style == BackgroundStyle::Snowfall {
-            snow::update(&mut self.snow_columns, delta_ms, height, speed);
+            weather::update_snow(&mut self.snow_columns, delta_ms, height, speed);
+        }
+        // Weather animation updates
+        if style == BackgroundStyle::Rainy {
+            weather::update_rain(&mut self.rain_columns, delta_ms, height, speed);
+        }
+        if style == BackgroundStyle::Stormy
+            && let Some(ref mut storm) = self.storm_state
+        {
+            weather::update_storm(storm, elapsed_ms, delta_ms, height, speed);
+        }
+        if style == BackgroundStyle::Windy {
+            weather::update_wind(&mut self.wind_streaks, delta_ms, width, height, speed);
         }
 
         let lines: Vec<Line> = (0..height)
@@ -139,12 +176,33 @@ impl BackgroundState {
             BackgroundStyle::GradientWave => {
                 stateless::render_gradient_char(x, y, width, height, elapsed_ms, speed)
             }
-            BackgroundStyle::Snowfall => snow::render_char(&self.snow_columns, x, y, elapsed_ms),
+            BackgroundStyle::Snowfall => weather::render_snow_char(&self.snow_columns, x, y, elapsed_ms),
             BackgroundStyle::Frost => {
                 stateless::render_frost_char(x, y, width, height, elapsed_ms, speed)
             }
             BackgroundStyle::Aurora => {
                 stateless::render_aurora_char(x, y, width, height, elapsed_ms, speed)
+            }
+            // Weather backgrounds
+            BackgroundStyle::Sunny => {
+                weather::render_sunny_char(x, y, width, height, elapsed_ms, speed)
+            }
+            BackgroundStyle::Rainy => weather::render_rain_char(&self.rain_columns, x, y),
+            BackgroundStyle::Stormy => {
+                if let Some(ref storm) = self.storm_state {
+                    weather::render_storm_char(storm, x, y, elapsed_ms)
+                } else {
+                    Span::raw(" ")
+                }
+            }
+            BackgroundStyle::Windy => {
+                weather::render_wind_char(&self.wind_streaks, x, y, elapsed_ms)
+            }
+            BackgroundStyle::Cloudy => {
+                weather::render_cloudy_char(x, y, width, height, elapsed_ms, speed)
+            }
+            BackgroundStyle::Foggy => {
+                weather::render_foggy_char(x, y, width, height, elapsed_ms, speed)
             }
             // Reactive backgrounds are handled separately in render_reactive()
             BackgroundStyle::SystemPulse
