@@ -602,7 +602,9 @@ pub fn render_foggy_char(
     }
 
     // Further sparsity based on position hash for natural gaps
-    let seed = (x as usize).wrapping_mul(31).wrapping_add((y as usize).wrapping_mul(17));
+    let seed = (x as usize)
+        .wrapping_mul(31)
+        .wrapping_add((y as usize).wrapping_mul(17));
     let threshold = 0.35 + ((seed % 30) as f32 / 100.0);
     if final_density < threshold {
         return Span::raw(" ");

@@ -101,19 +101,13 @@ impl BackgroundState {
             self.snow_columns = weather::init_snow_columns(width, height, self.init_seed);
         }
         // Weather animation initialization
-        if style == BackgroundStyle::Rainy
-            && (dimensions_changed || self.rain_columns.is_empty())
-        {
+        if style == BackgroundStyle::Rainy && (dimensions_changed || self.rain_columns.is_empty()) {
             self.rain_columns = weather::init_rain_columns(width, height, self.init_seed);
         }
-        if style == BackgroundStyle::Stormy
-            && (dimensions_changed || self.storm_state.is_none())
-        {
+        if style == BackgroundStyle::Stormy && (dimensions_changed || self.storm_state.is_none()) {
             self.storm_state = Some(weather::init_storm(width, height, self.init_seed));
         }
-        if style == BackgroundStyle::Windy
-            && (dimensions_changed || self.wind_streaks.is_empty())
-        {
+        if style == BackgroundStyle::Windy && (dimensions_changed || self.wind_streaks.is_empty()) {
             self.wind_streaks = weather::init_wind_streaks(width, height, self.init_seed);
         }
 
@@ -176,7 +170,9 @@ impl BackgroundState {
             BackgroundStyle::GradientWave => {
                 stateless::render_gradient_char(x, y, width, height, elapsed_ms, speed)
             }
-            BackgroundStyle::Snowfall => weather::render_snow_char(&self.snow_columns, x, y, elapsed_ms),
+            BackgroundStyle::Snowfall => {
+                weather::render_snow_char(&self.snow_columns, x, y, elapsed_ms)
+            }
             BackgroundStyle::Frost => {
                 stateless::render_frost_char(x, y, width, height, elapsed_ms, speed)
             }
