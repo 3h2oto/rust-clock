@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/crates/l/sigye)](https://github.com/am2rican5/sigye/blob/main/LICENSE)
 [![Built With Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 
-A beautiful terminal clock with ASCII art fonts.
+A beautiful terminal clock with ASCII art fonts. The name "sigye" (시계) means "clock" in Korean.
 
 ![sigye demo](assets/demo.gif)
 
