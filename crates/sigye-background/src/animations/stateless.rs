@@ -230,3 +230,195 @@ pub fn render_aurora_char(
 
     Span::styled(ch.to_string(), Style::new().fg(Color::Rgb(r, g, b)))
 }
+
+/// Render a twilight dawn background character (golden hour - sunrise).
+/// Fresh morning light with cool indigo-to-gold gradient and horizontal light rays.
+pub fn render_twilight_dawn_char(
+    x: u16,
+    y: u16,
+    width: u16,
+    height: u16,
+    elapsed_ms: u64,
+    speed: AnimationSpeed,
+) -> Span<'static> {
+    let y_norm = y as f32 / height.max(1) as f32;
+    let x_norm = x as f32 / width.max(1) as f32;
+
+    // Cool gradient: indigo (top) → lavender → soft pink → bright gold (horizon)
+    let (r, g, b) = if y_norm < 0.25 {
+        // Top sky - deep indigo to soft blue
+        let t = y_norm / 0.25;
+        (
+            (30.0 + 50.0 * t) as u8,
+            (40.0 + 50.0 * t) as u8,
+            (100.0 + 50.0 * t) as u8,
+        )
+    } else if y_norm < 0.5 {
+        // Upper-mid - lavender to soft pink
+        let t = (y_norm - 0.25) / 0.25;
+        (
+            (80.0 + 100.0 * t) as u8,
+            (90.0 + 50.0 * t) as u8,
+            (150.0 + 30.0 * t) as u8,
+        )
+    } else if y_norm < 0.75 {
+        // Lower-mid - soft pink to peach/warm gold
+        let t = (y_norm - 0.5) / 0.25;
+        (
+            (180.0 + 75.0 * t).min(255.0) as u8,
+            (140.0 + 50.0 * t) as u8,
+            (180.0 - 60.0 * t) as u8,
+        )
+    } else {
+        // Horizon - bright golden yellow
+        let t = (y_norm - 0.75) / 0.25;
+        (
+            255,
+            (190.0 + 50.0 * t).min(255.0) as u8,
+            (120.0 + 30.0 * t) as u8,
+        )
+    };
+
+    // Subtle shimmer effect
+    let shimmer_period = speed.aurora_wave_period_ms();
+    let shimmer =
+        ((elapsed_ms % shimmer_period) as f32 / shimmer_period as f32 * 2.0 * std::f32::consts::PI)
+            .sin()
+            * 0.08
+            + 0.92;
+
+    // Pseudo-random seed for patterns
+    let seed = (x as usize)
+        .wrapping_mul(31)
+        .wrapping_add((y as usize).wrapping_mul(17));
+
+    // Dawn-specific patterns: fading stars at top, clouds in mid, horizontal rays at horizon
+    let ch = if y_norm < 0.2 {
+        // Fading stars at top of sky
+        if seed % 100 < 3 {
+            '·'
+        } else {
+            return Span::raw(" ");
+        }
+    } else if y_norm < 0.6 {
+        // Soft wispy clouds in mid-sky
+        let cloud_wave =
+            ((x_norm * 4.0 + elapsed_ms as f32 / 15000.0) * std::f32::consts::PI).sin();
+        let cloud_threshold = 3 + (cloud_wave * 2.0).abs() as usize;
+        if seed % 100 < cloud_threshold {
+            '░'
+        } else {
+            return Span::raw(" ");
+        }
+    } else {
+        // Horizontal light rays emanating from horizon
+        let ray_wave = ((x_norm * 8.0 + elapsed_ms as f32 / 8000.0) * std::f32::consts::PI).sin();
+        let ray_intensity = (1.0 - (y_norm - 0.6) / 0.4) * 0.12; // Stronger near horizon
+        let ray_threshold = (ray_intensity * 100.0 + ray_wave.abs() * 4.0) as usize;
+        if seed % 100 < ray_threshold {
+            '─'
+        } else {
+            return Span::raw(" ");
+        }
+    };
+
+    let r = (r as f32 * shimmer) as u8;
+    let g = (g as f32 * shimmer) as u8;
+    let b = (b as f32 * shimmer) as u8;
+
+    Span::styled(ch.to_string(), Style::new().fg(Color::Rgb(r, g, b)))
+}
+
+/// Render a twilight dusk background character (sunset).
+/// Warm sunset glow with deep purple-to-red gradient and vertical color bands.
+pub fn render_twilight_dusk_char(
+    x: u16,
+    y: u16,
+    width: u16,
+    height: u16,
+    elapsed_ms: u64,
+    speed: AnimationSpeed,
+) -> Span<'static> {
+    let y_norm = y as f32 / height.max(1) as f32;
+    let x_norm = x as f32 / width.max(1) as f32;
+
+    // Warm gradient: deep purple (top) → magenta → rich orange → deep red (horizon)
+    let (r, g, b) = if y_norm < 0.25 {
+        // Top sky - deep purple
+        let t = y_norm / 0.25;
+        (
+            (50.0 + 40.0 * t) as u8,
+            (30.0 + 10.0 * t) as u8,
+            (90.0 + 20.0 * t) as u8,
+        )
+    } else if y_norm < 0.5 {
+        // Upper-mid - magenta to crimson
+        let t = (y_norm - 0.25) / 0.25;
+        (
+            (90.0 + 90.0 * t) as u8,
+            (40.0 + 30.0 * t) as u8,
+            (110.0 - 30.0 * t) as u8,
+        )
+    } else if y_norm < 0.75 {
+        // Lower-mid - rich orange
+        let t = (y_norm - 0.5) / 0.25;
+        (
+            (180.0 + 70.0 * t).min(255.0) as u8,
+            (70.0 + 60.0 * t) as u8,
+            (80.0 - 40.0 * t) as u8,
+        )
+    } else {
+        // Horizon - deep red-orange, fiery glow
+        let t = (y_norm - 0.75) / 0.25;
+        (255, (130.0 - 50.0 * t) as u8, (40.0 - 10.0 * t) as u8)
+    };
+
+    // Subtle shimmer effect
+    let shimmer_period = speed.aurora_wave_period_ms();
+    let shimmer =
+        ((elapsed_ms % shimmer_period) as f32 / shimmer_period as f32 * 2.0 * std::f32::consts::PI)
+            .sin()
+            * 0.06
+            + 0.94;
+
+    // Pseudo-random seed for patterns (different primes from dawn)
+    let seed = (x as usize)
+        .wrapping_mul(37)
+        .wrapping_add((y as usize).wrapping_mul(19));
+
+    // Dusk-specific patterns: emerging stars at top, vertical striations, color bands at horizon
+    let ch = if y_norm < 0.2 {
+        // Emerging stars at top of sky
+        if seed % 100 < 5 {
+            if seed.is_multiple_of(3) { '✦' } else { '·' }
+        } else {
+            return Span::raw(" ");
+        }
+    } else if y_norm < 0.5 {
+        // Vertical striations for atmospheric depth
+        let striation_wave =
+            ((y_norm * 12.0 + elapsed_ms as f32 / 10000.0) * std::f32::consts::PI).sin();
+        let striation_threshold = 2 + (striation_wave.abs() * 2.0) as usize;
+        if seed % 100 < striation_threshold {
+            '│'
+        } else {
+            return Span::raw(" ");
+        }
+    } else {
+        // Color bands near horizon - layered sunset effect
+        let band_wave = ((x_norm * 6.0 - elapsed_ms as f32 / 12000.0) * std::f32::consts::PI).sin();
+        let band_intensity = (y_norm - 0.5) / 0.5 * 0.08; // Stronger near bottom
+        let band_threshold = (band_intensity * 100.0 + band_wave.abs() * 4.0) as usize;
+        if seed % 100 < band_threshold {
+            if seed.is_multiple_of(3) { '▒' } else { '░' }
+        } else {
+            return Span::raw(" ");
+        }
+    };
+
+    let r = (r as f32 * shimmer) as u8;
+    let g = (g as f32 * shimmer) as u8;
+    let b = (b as f32 * shimmer) as u8;
+
+    Span::styled(ch.to_string(), Style::new().fg(Color::Rgb(r, g, b)))
+}
