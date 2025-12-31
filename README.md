@@ -12,7 +12,7 @@ A beautiful terminal clock with ASCII art fonts. The name "sigye" (시계) means
 
 - **40 bundled FIGlet fonts** - From classic Standard to stylish Star Wars
 - **17 color themes** - Including rainbow, gradient, and winter effects
-- **11 background styles** - Starfield, winter themes, and system-reactive visuals
+- **14 background styles** - Starfield, weather, twilight, and system-reactive visuals
 - **Animated themes** - Shifting, pulsing, wave, and reactive effects
 - **Blinking colon** - Optional colon separator animation
 - **12/24 hour format** - Toggle with a single keypress
@@ -76,6 +76,7 @@ animation_style = "None"
 animation_speed = "Medium"
 colon_blink = false
 background_style = "None"
+weather_location = ""  # Empty for auto-detect, or set city name (e.g., "Seoul")
 ```
 
 ### Custom Fonts
@@ -125,6 +126,13 @@ Slow, Medium (default), Fast
 - **Snowfall** - Animated falling snowflakes with drift
 - **Frost** - Frost crystals growing from screen edges
 - **Aurora** - Aurora Borealis waves in green/cyan/blue/purple
+
+### Weather
+- **Weather** - Dynamic background based on real-time weather conditions (fetched from wttr.in)
+
+### Twilight
+- **Dawn** - Warm sunrise colors with soft gradients
+- **Dusk** - Sunset hues with atmospheric effects
 
 ### System-Reactive
 Real-time visualizations driven by system metrics:
