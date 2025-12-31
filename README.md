@@ -96,8 +96,6 @@ Cyan, Green, White, Magenta, Yellow, Red, Blue
 - **Ocean** - Dark blue to Cyan to Teal
 - **Neon** - Magenta to Cyan (synthwave)
 - **Fire** - Red to Orange to Yellow
-
-### Winter Gradients
 - **Frost** - White to Ice Blue to Steel Blue
 - **Aurora** - Green to Cyan to Blue to Purple
 - **Winter** - Deep Blue to Royal Blue to Ice Blue
@@ -116,30 +114,33 @@ Slow, Medium (default), Fast
 
 ## Background Styles
 
-### Basic
+### Classic
 - **None** - No background (default)
-- **Starfield** - Twinkling animated stars
-- **Matrix Rain** - Falling green characters
-- **Gradient Wave** - Animated color wave
+- **Starfield** - Twinkling stars with varying brightness
+- **Matrix** - Falling green Matrix-style characters
+- **Gradient** - Flowing diagonal color wave
 
-### Winter Themes
-- **Snowfall** - Animated falling snowflakes with drift
-- **Frost** - Frost crystals growing from screen edges
-- **Aurora** - Aurora Borealis waves in green/cyan/blue/purple
-
-### Weather
-- **Weather** - Dynamic background based on real-time weather conditions (fetched from wttr.in)
-
-### Twilight
-- **Dawn** - Warm sunrise colors with soft gradients
-- **Dusk** - Sunset hues with atmospheric effects
+### Atmospheric
+Weather, seasonal, and time-of-day effects:
+- **Weather** - Auto-selects based on real-time conditions via wttr.in
+- **Sunny** - Radiant sun with animated rays
+- **Cloudy** - Layered drifting clouds
+- **Foggy** - Ground-hugging mist effect
+- **Rainy** - Falling rain droplets
+- **Stormy** - Rain with lightning flashes
+- **Windy** - Horizontal wind streaks
+- **Snowfall** - Drifting snowflakes in shades of blue
+- **Frost** - Ice crystals growing from screen edges
+- **Aurora** - Northern lights in green, cyan, blue, and purple
+- **Dawn** - Sunrise gradient with fading stars
+- **Dusk** - Sunset gradient with emerging stars
 
 ### System-Reactive
-Real-time visualizations driven by system metrics:
-- **SystemPulse** - CPU usage drives pulse intensity
-- **ResourceWave** - Memory usage drives wave amplitude
-- **DataFlow** - Network I/O drives particle density
-- **HeatMap** - Combined metrics as heat intensity
+Visualizations driven by real-time system metrics:
+- **Sys Pulse** - CPU usage drives pulsing rings from center
+- **Resource** - Memory usage controls wave amplitude
+- **Data Flow** - Network I/O drives particle density
+- **Heat Map** - Combined metrics as color intensity
 
 ## Bundled Fonts
 
